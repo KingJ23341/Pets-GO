@@ -112,6 +112,9 @@
             { name: "Faster Rolls Potion III", type: "speed", description: "Increases roll speed by 25% for 5 minutes.", imageUrl: "https://placehold.co/100x100/0000FF/FFFFFF?text=Speed+Potion+III", tier: 3, speedBoost: 0.25, durationSeconds: 300 },
             { name: "HUGE Egg", type: "huge_egg", description: "Guarantees a random HUGE pet when opened!", imageUrl: "https://placehold.co/100x100/00FFFF/000000?text=HUGE+Egg" }
         ];
+        
+        const shopRarityLevels = ['Common', 'Uncommon', 'Rare', 'Exclusive'];
+
 
         // Get DOM elements
         const loadingSpinner = document.getElementById('loadingSpinner');
@@ -279,6 +282,8 @@
         const uploadPackConfigInput = document.getElementById('uploadPackConfigInput');
         const packTiersContainer = document.getElementById('packTiersContainer');
         const addTierButton = document.getElementById('addTierButton');
+        const packItemsContainer = document.getElementById('packItemsContainer');
+        const addShopItemButton = document.getElementById('addShopItemButton');
         const savePackConfigButton = document.getElementById('savePackConfigButton');
 
 
@@ -595,30 +600,15 @@
                     console.log("Forever Pack config loaded from Firebase.");
                 } else {
                     console.log("No Forever Pack config found in Firebase. Using/creating default.");
-                    const defaultConfig = {
+                     const defaultConfig = {
                         tiers: [
-                            {
-                                paywallCost: 500,
-                                freeClaimsAfterPaywall: 1, // Adjusted default
-                                luckBonus: 0,
-                                items: [
-                                    { name: "Faster Rolls Potion", chance: 2 },
-                                    { name: "Lucky Roll Potion", chance: 10 },
-                                    { name: "HUGE Egg", chance: 500 }
-                                ]
-                            },
-                            {
-                                paywallCost: 1500,
-                                freeClaimsAfterPaywall: 2, // Adjusted default
-                                luckBonus: 0.25,
-                                items: [
-                                    { name: "Faster Rolls Potion", chance: 5 },
-                                    { name: "Faster Rolls Potion II", chance: 2 },
-                                    { name: "Lucky Roll Potion II", chance: 3 },
-                                    { name: "Lucky Roll Potion", chance: 10 },
-                                    { name: "HUGE Egg", chance: 250 }
-                                ]
-                            }
+                            { paywallCost: 500, freeClaimsAfterPaywall: 1, luckBonus: 0 },
+                            { paywallCost: 1500, freeClaimsAfterPaywall: 2, luckBonus: 0.25 }
+                        ],
+                        items: [
+                            { name: "Faster Rolls Potion", chance: 2, quantity: 1, rarity: "Common" },
+                            { name: "Lucky Roll Potion", chance: 10, quantity: 1, rarity: "Uncommon" },
+                            { name: "HUGE Egg", chance: 500, quantity: 1, rarity: "Exclusive" }
                         ]
                     };
                     setDoc(foreverPackConfigRef, defaultConfig, { merge: true })
@@ -1183,6 +1173,7 @@
             let totalActiveSpeedBoostPercentage = activeSpeedPotions.reduce((sum, p) => sum + p.speedBoost, 0);
 
             let rollSequenceBaseDuration = isAutoRolling ? 1000 : 2500;
+            if (isFasterRollsIUpgradePurchased) rollSequenceBaseDuration *= 0.95;
             currentRollAnimationDuration = rollSequenceBaseDuration * (1 - totalActiveSpeedBoostPercentage);
             if (currentRollAnimationDuration < 200) currentRollAnimationDuration = 200;
 
@@ -1326,10 +1317,11 @@
                 const rarityOrType = asset.rarity || asset.type;
                 const rarityClass = asset.rarity ? (rarityColors[normalizeRarity(asset.rarity)] || 'text-gray-700') : 'text-gray-700';
                 const chanceText = asset.chanceDenominator ? `1 in ${asset.chanceDenominator}` : (asset.rarity ? 'N/A Odds' : '');
+                const quantityText = asset.quantity > 1 ? ` (x${asset.quantity})` : '';
 
                 card.innerHTML = `
                     <img src="${imageUrl || 'https://placehold.co/150x150/cccccc/333333?text=Asset'}" alt="${name}" class="w-28 h-28 md:w-36 md:h-36 object-contain rounded-lg mb-3 shadow-md" onerror="this.onerror=null; this.src='https://placehold.co/150x150/cccccc/333333?text=Failed';">
-                    <div class="flex flex-col flex-grow w-full"> <p class="font-bold text-xl md:text-2xl text-gray-800 break-words mb-1">${name}</p>
+                    <div class="flex flex-col flex-grow w-full"> <p class="font-bold text-xl md:text-2xl text-gray-800 break-words mb-1">${name}${quantityText}</p>
                         <p class="text-md md:text-lg font-semibold ${rarityClass} break-words mb-1">${rarityOrType}</p>
                         ${asset.rarity ? `<p class="text-xs text-gray-500 break-words">${chanceText}</p>` : ''}
                     </div>
@@ -1720,9 +1712,9 @@
                             activeStatusMessage = ` <span class="text-green-500 font-semibold">(Active: ${Math.ceil(remainingSeconds / 60)} min)</span>`;
                         }
                     }
-
+                    const quantityText = item.quantity > 1 ? ` <span class="text-sm font-bold text-gray-600">(x${item.quantity})</span>` : '';
                     const imgHTML = `<img src="${item.imageUrl || 'https://placehold.co/100x100/cccccc/333333?text=Item'}" alt="${item.name}" class="w-24 h-24 md:w-28 md:h-28 object-contain rounded-lg mb-2 mt-1 shadow-sm" onerror="this.onerror=null; this.src='https://placehold.co/100x100/cccccc/333333?text=Failed';">`;
-                    const textHTML = `<div class="flex flex-col w-full items-center mt-auto pt-1"><p class="font-bold text-base md:text-lg text-gray-800 break-words leading-tight">${item.name}</p><p class="text-xs text-gray-500 break-words px-1 leading-snug mt-0.5">${item.description}${activeStatusMessage}</p></div>`;
+                    const textHTML = `<div class="flex flex-col w-full items-center mt-auto pt-1"><p class="font-bold text-base md:text-lg text-gray-800 break-words leading-tight">${item.name}${quantityText}</p><p class="text-xs text-gray-500 break-words px-1 leading-snug mt-0.5">${item.description}${activeStatusMessage}</p></div>`;
                     const hoverHTML = `<div class="absolute inset-0 bg-black bg-opacity-75 text-white flex items-center justify-center rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-2"><span class="text-sm font-bold">Click to use</span></div>`;
                     itemCard.innerHTML = imgHTML + textHTML + hoverHTML; itemsGrid.appendChild(itemCard);
                 });
@@ -2367,7 +2359,7 @@
         }
         
         function getShopClaimDetails(claimCount) {
-             if (!foreverPackConfig || !foreverPackConfig.tiers || foreverPackConfig.tiers.length === 0) return null;
+            if (!foreverPackConfig || !foreverPackConfig.tiers || foreverPackConfig.tiers.length === 0) return null;
 
             if (claimCount === 0) { // First claim is always free
                 return { type: 'free', cost: 0, tierIndex: 0, isPaywall: false };
@@ -2393,24 +2385,55 @@
                 claimsProcessed += (1 + freeClaimsInTier); // Add paywall and free claims to processed total
             }
 
-            // If all configured tiers are exhausted, escalate cost using the last tier's loot pool
+            // If all configured tiers are exhausted, escalate cost using the last tier's settings
             const lastTier = foreverPackConfig.tiers[foreverPackConfig.tiers.length - 1];
             const escalatingCost = (lastTier.paywallCost || 500) + (claimCount - claimsProcessed) * 250;
             return { type: 'paid', cost: escalatingCost, tierIndex: foreverPackConfig.tiers.length - 1, isPaywall: false };
         }
         
-        function rollItemForTier(tierIndex) {
-            let tierConfig = foreverPackConfig.tiers[tierIndex];
-            if (!tierConfig) tierConfig = foreverPackConfig.tiers[foreverPackConfig.tiers.length - 1];
-            
-            const itemPool = tierConfig.items;
-            if(!itemPool || itemPool.length === 0) return null;
+        function rollShopItem() {
+            if (!foreverPackConfig || !foreverPackConfig.items || foreverPackConfig.items.length === 0) {
+                console.error("Shop item pool is not configured or empty.");
+                return null;
+            }
 
-            const totalWeight = itemPool.reduce((sum, item) => sum + (1 / item.chance), 0);
-            let randomWeight = (Math.random() / playerShopState.currentLuck) * totalWeight;
-            let rolledItemData = itemPool.find(item => (randomWeight -= 1 / item.chance) < 0) || itemPool[itemPool.length - 1];
+            const rarityOrder = { 'Common': 0, 'Uncommon': 1, 'Rare': 2, 'Exclusive': 3 };
+            const itemPool = [...foreverPackConfig.items].sort((a, b) => {
+                return (rarityOrder[a.rarity] || 0) - (rarityOrder[b.rarity] || 0);
+            });
             
-            return availableItems.find(i => i.name === rolledItemData.name);
+            const totalWeight = itemPool.reduce((sum, item) => {
+                const chance = Math.max(item.chance, 0.0001); // Avoid division by zero
+                return sum + (1 / chance);
+            }, 0);
+
+            if (totalWeight === 0) return null;
+
+            const luckFactor = playerShopState.currentLuck;
+            const skewedRandomVal = 1 - Math.pow(1 - Math.random(), luckFactor);
+            let randomNumber = skewedRandomVal * totalWeight;
+
+            let rolledItemConfig = null;
+            for (const item of itemPool) {
+                const weight = 1 / item.chance;
+                if (randomNumber < weight) {
+                    rolledItemConfig = item;
+                    break;
+                }
+                randomNumber -= weight;
+            }
+
+            if (!rolledItemConfig) {
+                rolledItemConfig = itemPool[itemPool.length - 1];
+            }
+            
+            const finalItem = availableItems.find(i => i.name === rolledItemConfig.name);
+            if (!finalItem) return null;
+
+            return {
+                ...finalItem,
+                quantity: rolledItemConfig.quantity || 1
+            };
         }
 
         function populateShopQueue(count = 1) {
@@ -2419,10 +2442,11 @@
                 const claimDetails = getShopClaimDetails(futureClaimCount);
                 if (!claimDetails) continue; 
                 
-                const item = rollItemForTier(claimDetails.tierIndex);
+                const item = rollShopItem();
                 if (item) {
                     playerShopState.shopQueue.push({ item: item, details: claimDetails });
                 } else {
+                    console.warn("Could not roll a shop item, using fallback.");
                     const fallbackItem = availableItems[0];
                     playerShopState.shopQueue.push({ item: fallbackItem, details: claimDetails });
                 }
@@ -2438,11 +2462,14 @@
             let buttonText = details.isPaywall ? 'Buy' : 'Claim';
             let costText = details.cost > 0 ? `${details.cost} Coins` : 'Free!';
             let imageUrl = details.isPaywall ? 'https://placehold.co/100x100/fcd34d/000000?text=%E2%9C%A8' : item.imageUrl;
+            const tierConfig = foreverPackConfig.tiers[details.tierIndex];
+            const luckBonusText = tierConfig ? `Pay to unlock Tier ${details.tierIndex + 1} and get +${(tierConfig.luckBonus || 0)}x luck!` : 'Pay to unlock next Tier!';
+            const quantityText = item.quantity > 1 ? ` (x${item.quantity})` : '';
 
             card.innerHTML = `
-                <p class="font-bold text-xl mb-2 truncate" title="${title}">${title}</p>
+                <p class="font-bold text-xl mb-2 truncate" title="${title}">${title}${quantityText}</p>
                 <img src="${imageUrl}" alt="${title}" class="w-24 h-24 rounded-lg my-4 object-contain">
-                <p class="text-sm text-gray-600 flex-grow">${details.isPaywall ? `Pay to unlock Tier ${details.tierIndex + 1} and get +${(foreverPackConfig.tiers[details.tierIndex]?.luckBonus || 0)}x luck!` : item.description}</p>
+                <p class="text-sm text-gray-600 flex-grow">${details.isPaywall ? luckBonusText : item.description}</p>
                 <button class="claim-shop-item-btn mt-4 w-full py-2 px-4 rounded-lg font-bold text-white bg-blue-500 hover:bg-blue-600" ${!isVisible ? 'disabled' : ''}>
                     ${buttonText} (${costText})
                 </button>
@@ -2459,7 +2486,7 @@
         }
 
         function updateShopDisplay() {
-             if (!foreverPackConfig || !foreverPackConfig.tiers || foreverPackConfig.tiers.length === 0) {
+            if (!foreverPackConfig || !foreverPackConfig.tiers || !foreverPackConfig.items) {
                 shopItemsContainer.innerHTML = `<p class="text-center text-red-500 w-full col-span-full">Shop not configured by admin.</p>`;
                 return;
             }
@@ -2507,8 +2534,16 @@
                 playerShopState.resetExtensionMinutes += 10;
             }
             
-            userItems.push(JSON.parse(JSON.stringify(item))); 
-            shopSessionWinnings.push(item);
+            const itemToAdd = JSON.parse(JSON.stringify(item));
+            
+            const existingItemIndex = userItems.findIndex(ui => ui.name === itemToAdd.name && ui.type === itemToAdd.type);
+            if (existingItemIndex > -1 && item.type !== 'huge_egg') {
+                userItems[existingItemIndex].quantity = (userItems[existingItemIndex].quantity || 1) + (itemToAdd.quantity || 1);
+            } else {
+                 userItems.push({ ...itemToAdd, quantity: itemToAdd.quantity || 1 });
+            }
+
+            shopSessionWinnings.push(itemToAdd);
             
             playerShopState.claimedCount++;
             populateShopQueue(1);
@@ -2588,7 +2623,8 @@
         
         function populateForeverPackManager() {
             packTiersContainer.innerHTML = '';
-            if (!foreverPackConfig || !foreverPackConfig.tiers) {
+            packItemsContainer.innerHTML = '';
+            if (!foreverPackConfig || !foreverPackConfig.tiers || !foreverPackConfig.items) {
                 packTiersContainer.innerHTML = '<p>No config loaded.</p>'; return;
             }
 
@@ -2597,11 +2633,11 @@
                 tierDiv.className = 'p-4 border rounded-lg bg-gray-50';
                 tierDiv.innerHTML = `
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-xl font-bold">Tier ${tierIndex + 1}</h3>
+                        <h3 class="text-xl font-bold">Tier ${tierIndex + 1} (Progression)</h3>
                         ${tierIndex > 0 ? `<button class="delete-tier-btn bg-red-500 text-white px-2 py-1 rounded text-xs" data-tier-index="${tierIndex}">Delete Tier</button>` : '<span class="text-xs text-gray-500">Tier 1 cannot be deleted</span>'}
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                         <div>
+                        <div>
                             <label class="block text-sm font-medium">Paywall Cost (Coins)</label>
                             <input type="number" value="${tier.paywallCost || 0}" class="paywall-cost-input w-full p-1 border rounded" data-tier-index="${tierIndex}">
                         </div>
@@ -2609,76 +2645,93 @@
                             <label class="block text-sm font-medium">Free Claims After Paywall</label>
                             <input type="number" value="${tier.freeClaimsAfterPaywall || 0}" class="free-claims-input w-full p-1 border rounded" data-tier-index="${tierIndex}">
                         </div>
-                         <div>
+                        <div>
                             <label class="block text-sm font-medium">Luck Bonus on Tier Up</label>
                             <input type="number" step="0.01" value="${tier.luckBonus}" class="luck-bonus-input w-full p-1 border rounded" data-tier-index="${tierIndex}">
                         </div>
                     </div>
-                    <h4 class="font-semibold mb-2">Items in Tier</h4>
-                    <div class="tier-items-container space-y-2" data-tier-index="${tierIndex}">
-                        ${(tier.items || []).map((item, itemIndex) => `
-                            <div class="flex items-center gap-2 bg-white p-2 rounded border">
-                                <select class="item-name-select p-1 border rounded flex-grow">
-                                    ${availableItems.map(availItem => `<option value="${availItem.name}" ${availItem.name === item.name ? 'selected' : ''}>${availItem.name}</option>`).join('')}
-                                </select>
-                                <label class="text-sm">Chance (1 in)</label>
-                                <input type="number" value="${item.chance}" class="item-chance-input w-24 p-1 border rounded">
-                                <button class="delete-item-btn bg-red-400 text-white px-2 py-1 rounded text-xs" data-item-index="${itemIndex}">X</button>
-                            </div>
-                        `).join('')}
-                    </div>
-                    <button class="add-item-btn mt-4 bg-green-500 text-white px-3 py-1 rounded text-sm" data-tier-index="${tierIndex}">+ Add Item</button>
                 `;
                 packTiersContainer.appendChild(tierDiv);
             });
+            
+            foreverPackConfig.items.forEach((item, itemIndex) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'flex items-center gap-2 bg-white p-2 rounded border';
+                itemDiv.innerHTML = `
+                    <select class="item-name-select p-1 border rounded flex-grow">
+                        ${availableItems.map(availItem => `<option value="${availItem.name}" ${availItem.name === item.name ? 'selected' : ''}>${availItem.name}</option>`).join('')}
+                    </select>
+                    <label class="text-sm">Chance (1 in)</label>
+                    <input type="number" value="${item.chance}" class="item-chance-input w-24 p-1 border rounded">
+                     <label class="text-sm">Qty</label>
+                    <input type="number" value="${item.quantity || 1}" class="item-quantity-input w-16 p-1 border rounded">
+                    <label class="text-sm">Rarity</label>
+                    <select class="item-rarity-select p-1 border rounded">
+                        ${shopRarityLevels.map(r => `<option value="${r}" ${r === item.rarity ? 'selected' : ''}>${r}</option>`).join('')}
+                    </select>
+                    <button class="delete-item-btn bg-red-400 text-white px-2 py-1 rounded text-xs" data-item-index="${itemIndex}">X</button>
+                `;
+                packItemsContainer.appendChild(itemDiv);
+            });
+
             addForeverPackManagerListeners();
         }
 
         function addForeverPackManagerListeners() {
-            document.querySelectorAll('.add-item-btn').forEach(btn => btn.onclick = (e) => {
-                const tierIndex = e.target.dataset.tierIndex;
-                const container = document.querySelector(`.tier-items-container[data-tier-index='${tierIndex}']`);
-                const newItemDiv = document.createElement('div');
-                newItemDiv.className = 'flex items-center gap-2 bg-white p-2 rounded border';
-                newItemDiv.innerHTML = `
-                    <select class="item-name-select p-1 border rounded flex-grow">
-                        ${availableItems.map(availItem => `<option value="${availItem.name}">${availItem.name}</option>`).join('')}
-                    </select>
-                    <label class="text-sm">Chance (1 in)</label>
-                    <input type="number" value="10" class="item-chance-input w-24 p-1 border rounded">
-                    <button class="delete-item-btn bg-red-400 text-white px-2 py-1 rounded text-xs">X</button>
-                `;
-                container.appendChild(newItemDiv);
-                newItemDiv.querySelector('.delete-item-btn').onclick = (e) => e.target.parentElement.remove();
-            });
-
-            document.querySelectorAll('.delete-item-btn').forEach(btn => btn.onclick = (e) => e.target.parentElement.remove());
             document.querySelectorAll('.delete-tier-btn').forEach(btn => btn.onclick = (e) => e.target.closest('.p-4.border').remove());
+            packItemsContainer.querySelectorAll('.delete-item-btn').forEach(btn => btn.onclick = (e) => e.target.parentElement.remove());
+        }
+        
+        function handleAddShopItem() {
+            const newItemDiv = document.createElement('div');
+            newItemDiv.className = 'flex items-center gap-2 bg-white p-2 rounded border';
+            newItemDiv.innerHTML = `
+                <select class="item-name-select p-1 border rounded flex-grow">
+                    ${availableItems.map(availItem => `<option value="${availItem.name}">${availItem.name}</option>`).join('')}
+                </select>
+                <label class="text-sm">Chance (1 in)</label>
+                <input type="number" value="10" class="item-chance-input w-24 p-1 border rounded">
+                 <label class="text-sm">Qty</label>
+                <input type="number" value="1" class="item-quantity-input w-16 p-1 border rounded">
+                <label class="text-sm">Rarity</label>
+                <select class="item-rarity-select p-1 border rounded">
+                     ${shopRarityLevels.map(r => `<option value="${r}">${r}</option>`).join('')}
+                </select>
+                <button class="delete-item-btn bg-red-400 text-white px-2 py-1 rounded text-xs">X</button>
+            `;
+            packItemsContainer.appendChild(newItemDiv);
+            newItemDiv.querySelector('.delete-item-btn').onclick = (e) => e.target.parentElement.remove();
         }
 
         async function saveForeverPackConfig() {
             if (userId !== ADMIN_USER_ID) return showMessage("Not authorized.", 'error');
 
-            const newConfig = { tiers: [] };
+            const newConfig = { tiers: [], items: [] };
             const tierDivs = packTiersContainer.querySelectorAll('.p-4.border');
 
             tierDivs.forEach((tierDiv) => {
                 const tierData = {
                     paywallCost: parseInt(tierDiv.querySelector('.paywall-cost-input').value) || 0,
                     freeClaimsAfterPaywall: parseInt(tierDiv.querySelector('.free-claims-input').value) || 0,
-                    luckBonus: parseFloat(tierDiv.querySelector('.luck-bonus-input').value) || 0,
-                    items: []
+                    luckBonus: parseFloat(tierDiv.querySelector('.luck-bonus-input').value) || 0
                 };
-
-                const itemDivs = tierDiv.querySelectorAll('.tier-items-container > div');
-                itemDivs.forEach(itemDiv => {
-                    const itemName = itemDiv.querySelector('.item-name-select').value;
-                    const itemChance = parseInt(itemDiv.querySelector('.item-chance-input').value);
-                    if (itemName && itemChance > 0) {
-                        tierData.items.push({ name: itemName, chance: itemChance });
-                    }
-                });
                 newConfig.tiers.push(tierData);
+            });
+            
+            const itemDivs = packItemsContainer.querySelectorAll('.flex.items-center');
+            itemDivs.forEach(itemDiv => {
+                const itemName = itemDiv.querySelector('.item-name-select').value;
+                const itemChance = parseInt(itemDiv.querySelector('.item-chance-input').value);
+                const itemQuantity = parseInt(itemDiv.querySelector('.item-quantity-input').value) || 1;
+                const itemRarity = itemDiv.querySelector('.item-rarity-select').value;
+                if (itemName && itemChance > 0) {
+                    newConfig.items.push({ 
+                        name: itemName, 
+                        chance: itemChance, 
+                        quantity: itemQuantity, 
+                        rarity: itemRarity 
+                    });
+                }
             });
 
             try {
@@ -2698,7 +2751,6 @@
                 paywallCost: 3000,
                 freeClaimsAfterPaywall: 2,
                 luckBonus: 0.1,
-                items: [{ name: "Faster Rolls Potion", chance: 10 }]
             };
             foreverPackConfig.tiers.push(newTier);
             populateForeverPackManager();
@@ -2720,14 +2772,19 @@
             reader.onload = async (e) => {
                 try {
                     const uploadedConfig = JSON.parse(e.target.result);
-                    foreverPackConfig = uploadedConfig;
-                    populateForeverPackManager();
-                    showMessage("Config loaded. Review and click 'Save All Changes'.", 'info');
+                    if (uploadedConfig.tiers && uploadedConfig.items) {
+                        foreverPackConfig = uploadedConfig;
+                        populateForeverPackManager();
+                        showMessage("Config loaded. Review and click 'Save All Changes'.", 'info');
+                    } else {
+                        showMessage("Invalid config structure.", 'error');
+                    }
                 } catch (error) {
                     showMessage("Failed to upload. Invalid JSON.", 'error');
                 }
             };
             reader.readAsText(file);
+            event.target.value = '';
         });
 
         // --- Event Listeners ---
@@ -2910,8 +2967,11 @@
 
         shopButton.addEventListener('click', openShop);
         closeShopModal.addEventListener('click', closeShop);
+        
         closeForeverPackManagerModalBtn.addEventListener('click', closeForeverPackManagerModal);
         savePackConfigButton.addEventListener('click', saveForeverPackConfig);
+        addShopItemButton.addEventListener('click', handleAddShopItem);
+
 
         window.onload = () => { setupFirebase(); };
     </script>
@@ -3097,7 +3157,7 @@
 
     <!-- Forever Pack Manager Modal -->
     <div id="foreverPackManagerModal" class="modal hidden">
-        <div class="modal-content max-w-3xl w-full">
+        <div class="modal-content max-w-4xl w-full">
             <button class="modal-close-button" id="closeForeverPackManagerModal">&times;</button>
             <h2 class="text-2xl font-bold mb-4">Forever Pack Manager</h2>
             <div class="mb-6 p-4 border border-gray-200 rounded-lg">
@@ -3106,11 +3166,22 @@
                 <label for="uploadPackConfigInput" class="inline-block bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg cursor-pointer">Upload Config</label>
                 <input type="file" id="uploadPackConfigInput" accept=".json" class="hidden">
             </div>
+            
+            <h3 class="text-2xl font-bold mt-6 mb-2">Tier Progression</h3>
+            <p class="text-sm text-gray-600 mb-4">Define the cost and luck bonuses for progressing through the shop each day.</p>
             <div id="packTiersContainer" class="space-y-6">
                 <!-- Tiers will be dynamically added here -->
             </div>
-            <div class="mt-6 flex justify-between">
-                <button id="addTierButton" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">Add Tier</button>
+             <button id="addTierButton" class="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">Add Tier</button>
+
+            <h3 class="text-2xl font-bold mt-8 mb-2">Global Item Pool</h3>
+            <p class="text-sm text-gray-600 mb-4">This is the single pool of items that can be claimed from the shop.</p>
+            <div id="packItemsContainer" class="space-y-2">
+                <!-- Items will be dynamically added here -->
+            </div>
+            <button id="addShopItemButton" class="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">+ Add Item to Pool</button>
+            
+            <div class="mt-8 flex justify-end">
                 <button id="savePackConfigButton" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg">Save All Changes</button>
             </div>
         </div>
