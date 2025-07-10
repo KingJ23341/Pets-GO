@@ -44,7 +44,8 @@
             lastResetTimestamp: 0,
             currentLuck: 1.0,
             resetExtensionMinutes: 0,
-            shopQueue: [] // Holds pre-rolled items for the conveyor belt
+            shopQueue: [], // Holds pre-rolled items for the conveyor belt
+            dailyShopStructure: [] // Holds the generated structure for the day's shop
         };
         let shopResetIntervalId = null;
         let shopSessionWinnings = []; // To batch item reveals
@@ -66,6 +67,8 @@
         let isMoreCoinsIIUpgradePurchased = false;
         let isRollMoreItemsUpgradePurchased = false;
         let isFusePetsUpgradePurchased = false; 
+        let isBetterFusesIUpgradePurchased = false;
+        let isCheaperFusesIUpgradePurchased = false;
 
         // Potion states
         let activeSpeedPotions = []; 
@@ -110,7 +113,9 @@
             { name: "Lucky Roll Potion II", type: "luck", description: "Increases luck of the next roll by 15%. Lasts one roll.", imageUrl: "https://placehold.co/100x100/FF5722/FFFFFF?text=Lucky+Potion+II", tier: 2, luckBoost: 0.15 },
             { name: "Lucky Roll Potion III", type: "luck", description: "Increases luck of the next roll by 20%. Lasts one roll.", imageUrl: "https://placehold.co/100x100/FF0000/FFFFFF?text=Lucky+Potion+III", tier: 3, luckBoost: 0.20 },
             { name: "Faster Rolls Potion III", type: "speed", description: "Increases roll speed by 25% for 5 minutes.", imageUrl: "https://placehold.co/100x100/0000FF/FFFFFF?text=Speed+Potion+III", tier: 3, speedBoost: 0.25, durationSeconds: 300 },
-            { name: "HUGE Egg", type: "huge_egg", description: "Guarantees a random HUGE pet when opened!", imageUrl: "https://placehold.co/100x100/00FFFF/000000?text=HUGE+Egg" }
+            { name: "HUGE Egg", type: "huge_egg", description: "Guarantees a random HUGE pet when opened!", imageUrl: "https://placehold.co/100x100/00FFFF/000000?text=HUGE+Egg" },
+            { name: "Lucky Rolls Potion IV", type: "luck", description: "Increases luck of your NEXT roll by 25%", imageUrl: "https://placehold.co/100x100/9400D3/FFFFFF?text=Lucky+Potion+IV", tier: 4, luckBoost: 0.25 },
+            { name: "Faster Rolls Potion IV", type: "speed", description: "Increases speed of your rolls by 30%. Lasts 5 minutes.", imageUrl: "https://placehold.co/100x100/4B0082/FFFFFF?text=Speed+Potion+IV", tier: 4, speedBoost: 0.30, durationSeconds: 300 }
         ];
         
         const shopRarityLevels = ['Common', 'Uncommon', 'Rare', 'Exclusive'];
@@ -206,7 +211,11 @@
         const rollMoreItemsUpgradeSection = document.getElementById('rollMoreItemsUpgradeSection');
         const buyRollMoreItemsUpgradeButton = document.getElementById('buyRollMoreItemsUpgradeButton');
         const fusePetsUpgradeSection = document.getElementById('fusePetsUpgradeSection'); 
-        const buyFusePetsUpgradeButton = document.getElementById('buyFusePetsUpgradeButton'); 
+        const buyFusePetsUpgradeButton = document.getElementById('buyFusePetsUpgradeButton');
+        const betterFusesIUpgradeSection = document.getElementById('betterFusesIUpgradeSection');
+        const buyBetterFusesIUpgradeButton = document.getElementById('buyBetterFusesIUpgradeButton');
+        const cheaperFusesIUpgradeSection = document.getElementById('cheaperFusesIUpgradeSection');
+        const buyCheaperFusesIUpgradeButton = document.getElementById('buyCheaperFusesIUpgradeButton');
 
         // Admin Upgrade Tree Modal elements
         const adminUpgradeTreeModal = document.getElementById('adminUpgradeTreeModal');
@@ -286,6 +295,11 @@
         const addShopItemButton = document.getElementById('addShopItemButton');
         const savePackConfigButton = document.getElementById('savePackConfigButton');
 
+        // Update Log Modal elements
+        const updateLogButton = document.getElementById('updateLogButton');
+        const updateLogModal = document.getElementById('updateLogModal');
+        const closeUpdateLogModal = document.getElementById('closeUpdateLogModal');
+        const updateLogContent = document.getElementById('updateLogContent');
 
         let editingPetId = null;
 
@@ -371,7 +385,8 @@
             inventoryButton.disabled = true;
             petCollectionButton.disabled = true;
             leaderboardsButton.disabled = true;
-            recentRollsButton.disabled = true; 
+            recentRollsButton.disabled = true;
+            updateLogButton.disabled = true;
             shopButton.disabled = true; 
             adminPanelButton.disabled = true;
             if (!keepAutoRollActive) {
@@ -391,6 +406,7 @@
             petCollectionButton.disabled = shouldDisableAll;
             leaderboardsButton.disabled = shouldDisableAll;
             recentRollsButton.disabled = shouldDisableAll; 
+            updateLogButton.disabled = shouldDisableAll;
             shopButton.disabled = shouldDisableAll;
             adminPanelButton.disabled = shouldDisableAll;
 
@@ -444,6 +460,8 @@
             isBetterDiceIIUpgradePurchased = false; isMoreCoinsIIUpgradePurchased = false;
             isRollMoreItemsUpgradePurchased = false;
             isFusePetsUpgradePurchased = false; 
+            isBetterFusesIUpgradePurchased = false;
+            isCheaperFusesIUpgradePurchased = false;
             activeSpeedPotions = []; activeLuckPotions = [];
             userNickname = null;
             rollStreak = 0;
@@ -452,7 +470,8 @@
                 lastResetTimestamp: Date.now(),
                 currentLuck: 1.0,
                 resetExtensionMinutes: 0,
-                shopQueue: []
+                shopQueue: [],
+                dailyShopStructure: []
             };
         }
 
@@ -479,6 +498,8 @@
             isMoreCoinsIIUpgradePurchased = data.isMoreCoinsIIUpgradePurchased || false;
             isRollMoreItemsUpgradePurchased = data.isRollMoreItemsUpgradePurchased || false;
             isFusePetsUpgradePurchased = data.isFusePetsUpgradePurchased || false;
+            isBetterFusesIUpgradePurchased = data.isBetterFusesIUpgradePurchased || false;
+            isCheaperFusesIUpgradePurchased = data.isCheaperFusesIUpgradePurchased || false;
             activeSpeedPotions = data.activeSpeedPotions || [];
             userNickname = data.userNickname || null;
 
@@ -487,9 +508,11 @@
                 lastResetTimestamp: Date.now(),
                 currentLuck: 1.0,
                 resetExtensionMinutes: 0,
-                shopQueue: []
+                shopQueue: [],
+                dailyShopStructure: []
             };
             if (!playerShopState.shopQueue) playerShopState.shopQueue = []; // Backwards compatibility
+            if (!playerShopState.dailyShopStructure) playerShopState.dailyShopStructure = []; // Backwards compatibility for new structure
         }
 
         function loadGameDataFromLocalStorage() {
@@ -522,6 +545,8 @@
                 isMoreCoinsIIUpgradePurchased: isMoreCoinsIIUpgradePurchased,
                 isRollMoreItemsUpgradePurchased: isRollMoreItemsUpgradePurchased,
                 isFusePetsUpgradePurchased: isFusePetsUpgradePurchased, 
+                isBetterFusesIUpgradePurchased: isBetterFusesIUpgradePurchased,
+                isCheaperFusesIUpgradePurchased: isCheaperFusesIUpgradePurchased,
                 activeSpeedPotions: activeSpeedPotions,
                 userNickname: userNickname,
                 playerShopState: playerShopState
@@ -552,6 +577,8 @@
                         isMoreCoinsIIUpgradePurchased: isMoreCoinsIIUpgradePurchased,
                         isRollMoreItemsUpgradePurchased: isRollMoreItemsUpgradePurchased,
                         isFusePetsUpgradePurchased: isFusePetsUpgradePurchased,
+                        isBetterFusesIUpgradePurchased: isBetterFusesIUpgradePurchased,
+                        isCheaperFusesIUpgradePurchased: isCheaperFusesIUpgradePurchased,
                         activeSpeedPotions: activeSpeedPotions,
                         userNickname: userNickname,
                         playerShopState: playerShopState
@@ -683,6 +710,8 @@
             updateMoreCoinsIIUpgradeUI();
             updateRollMoreItemsUpgradeUI();
             updateFusePetsUpgradeUI(); 
+            updateBetterFusesIUpgradeUI();
+            updateCheaperFusesIUpgradeUI();
             enableMainButtons();
         }
 
@@ -942,8 +971,8 @@
             const itemTypes = [...new Set(availableItems.map(item => item.type))];
 
             itemTypes.forEach(type => {
-                const tiers = [1, 2, 3].map(t => availableItems.filter(item => item.type === type && item.tier === t));
-                const weights = isRollBetterItemsUpgradePurchased ? [70, 20, 10] : [90, 9, 1];
+                const tiers = [1, 2, 3, 4].map(t => availableItems.filter(item => item.type === type && item.tier === t));
+                const weights = isRollBetterItemsUpgradePurchased ? [70, 20, 8.5, 1.5] : [90, 8, 1, 1];
                 
                 tiers.forEach((tierItems, index) => {
                     if (tierItems.length > 0) {
@@ -1065,6 +1094,16 @@
             buyFusePetsUpgradeButton.disabled = isFusePetsUpgradePurchased || coins < 15000 || !isRollMoreItemsUpgradePurchased;
             buyFusePetsUpgradeButton.classList.toggle('opacity-50', isFusePetsUpgradePurchased || coins < 15000 || !isRollMoreItemsUpgradePurchased);
             buyFusePetsUpgradeButton.classList.toggle('cursor-not-allowed', isFusePetsUpgradePurchased || coins < 15000 || !isRollMoreItemsUpgradePurchased);
+        
+            buyBetterFusesIUpgradeButton.textContent = isBetterFusesIUpgradePurchased ? 'Purchased' : 'Buy Better Fuses I (16000 Coins)';
+            buyBetterFusesIUpgradeButton.disabled = isBetterFusesIUpgradePurchased || coins < 16000 || !isFusePetsUpgradePurchased;
+            buyBetterFusesIUpgradeButton.classList.toggle('opacity-50', isBetterFusesIUpgradePurchased || coins < 16000 || !isFusePetsUpgradePurchased);
+            buyBetterFusesIUpgradeButton.classList.toggle('cursor-not-allowed', isBetterFusesIUpgradePurchased || coins < 16000 || !isFusePetsUpgradePurchased);
+
+            buyCheaperFusesIUpgradeButton.textContent = isCheaperFusesIUpgradePurchased ? 'Purchased' : 'Buy Cheaper Fuses I (18000 Coins)';
+            buyCheaperFusesIUpgradeButton.disabled = isCheaperFusesIUpgradePurchased || coins < 18000 || !isBetterFusesIUpgradePurchased;
+            buyCheaperFusesIUpgradeButton.classList.toggle('opacity-50', isCheaperFusesIUpgradePurchased || coins < 18000 || !isBetterFusesIUpgradePurchased);
+            buyCheaperFusesIUpgradeButton.classList.toggle('cursor-not-allowed', isCheaperFusesIUpgradePurchased || coins < 18000 || !isBetterFusesIUpgradePurchased);
         }
 
         function updateRollStreakUI() {
@@ -1139,6 +1178,14 @@
                 fuseMachineTabButton.classList.toggle('hidden', !isFusePetsUpgradePurchased);
                 inventoryTabButton.classList.toggle('hidden', !isInventoryUpgradePurchased); 
             }
+        }
+
+        function updateBetterFusesIUpgradeUI() {
+            betterFusesIUpgradeSection.classList.toggle('hidden', !isFusePetsUpgradePurchased);
+        }
+
+        function updateCheaperFusesIUpgradeUI() {
+            cheaperFusesIUpgradeSection.classList.toggle('hidden', !isBetterFusesIUpgradePurchased);
         }
 
 
@@ -1633,6 +1680,26 @@
             } else { showMessage(`Not enough coins! Need ${COST}.`, 'error'); }
         }
 
+        function handleBuyBetterFusesIUpgrade() {
+            const COST = 16000;
+            if (!isFusePetsUpgradePurchased) { showMessage("Buy 'Fuse Pets' first!", 'error'); return; }
+            if (isBetterFusesIUpgradePurchased) { showMessage("Already purchased!", 'info'); return; }
+            if (coins >= COST) {
+                coins -= COST; isBetterFusesIUpgradePurchased = true; savePlayerProgress(); updateUIBasedOnGameState();
+                showMessage("Bought 'Better Fuses I'! Your base fuse luck is now 1.25x!", 'success');
+            } else { showMessage(`Not enough coins! Need ${COST}.`, 'error'); }
+        }
+
+        function handleBuyCheaperFusesIUpgrade() {
+            const COST = 18000;
+            if (!isBetterFusesIUpgradePurchased) { showMessage("Buy 'Better Fuses I' first!", 'error'); return; }
+            if (isCheaperFusesIUpgradePurchased) { showMessage("Already purchased!", 'info'); return; }
+            if (coins >= COST) {
+                coins -= COST; isCheaperFusesIUpgradePurchased = true; savePlayerProgress(); updateUIBasedOnGameState();
+                showMessage("Bought 'Cheaper Fuses I'! Fusing pets now costs 10% less!", 'success');
+            } else { showMessage(`Not enough coins! Need ${COST}.`, 'error'); }
+        }
+
 
         // --- Inventory Functions ---
         function openInventory(showFuseMachine = false) {
@@ -1679,7 +1746,7 @@
         }
 
         function updateFuseButtonState() {
-            if (!fusePetsButton) return;
+            if (!fusePetsButton || !fuseSelectedCountDisplay) return;
             const minPets = 5;
             const numSelected = petsSelectedForFusion.length;
             const canFuse = numSelected >= minPets;
@@ -1687,13 +1754,20 @@
             fusePetsButton.classList.toggle('opacity-50', !canFuse);
             fusePetsButton.classList.toggle('cursor-not-allowed', !canFuse);
 
-            let currentFuseLuck = 1.0;
+            let baseCost = 125;
+            let perPetCost = 25;
+            if (isCheaperFusesIUpgradePurchased) {
+                baseCost = Math.round(baseCost * 0.9);
+                perPetCost = Math.round(perPetCost * 0.9);
+            }
+            const fusionCost = baseCost + (Math.max(0, numSelected - minPets) * perPetCost);
+
+            let currentFuseLuck = isBetterFusesIUpgradePurchased ? 1.25 : 1.0;
             if (numSelected >= minPets) {
                 currentFuseLuck += (numSelected - minPets) * 0.1;
             }
 
-            const fusionCost = 125 + (Math.max(0, numSelected - 5) * 25);
-            fuseSelectedCountDisplay.textContent = `Selected: ${numSelected} pets (Luck: ${currentFuseLuck.toFixed(1)}x, Cost: ${fusionCost} Coins)`;
+            fuseSelectedCountDisplay.textContent = `Selected: ${numSelected} pets (Luck: ${currentFuseLuck.toFixed(2)}x, Cost: ${fusionCost} Coins)`;
         }
 
         function populateInventory() {
@@ -2193,7 +2267,9 @@
                 { name: "Better Dice II", flag: "isBetterDiceIIUpgradePurchased", cost: "11000 Coins" },
                 { name: "More Coins II", flag: "isMoreCoinsIIUpgradePurchased", cost: "15000 Coins" },
                 { name: "Roll More Items", flag: "isRollMoreItemsUpgradePurchased", cost: "14000 Coins" },
-                { name: "Fuse Pets", flag: "isFusePetsUpgradePurchased", cost: "15000 Coins" } 
+                { name: "Fuse Pets", flag: "isFusePetsUpgradePurchased", cost: "15000 Coins" },
+                { name: "Better Fuses I", flag: "isBetterFusesIUpgradePurchased", cost: "16000 Coins" },
+                { name: "Cheaper Fuses I", flag: "isCheaperFusesIUpgradePurchased", cost: "18000 Coins" } 
             ];
 
             upgrades.forEach(upgrade => {
@@ -2238,7 +2314,15 @@
             if (petsSelectedForFusion.length < minPets) { showMessage(`You need to select at least ${minPets} pets to fuse!`, 'error'); return; }
 
             const numFused = petsSelectedForFusion.length;
-            const fusionCost = 125 + (Math.max(0, numFused - minPets) * 25);
+            
+            let baseCost = 125;
+            let perPetCost = 25;
+            if (isCheaperFusesIUpgradePurchased) {
+                baseCost = Math.round(baseCost * 0.9);
+                perPetCost = Math.round(perPetCost * 0.9);
+            }
+            const fusionCost = baseCost + (Math.max(0, numFused - minPets) * perPetCost);
+
             if (coins < fusionCost) { showMessage(`You need ${fusionCost} coins to fuse ${numFused} pets! You only have ${coins} coins.`, 'error'); return; }
 
             const selectedPetObjects = petsSelectedForFusion.map(id => userPets.find(p => p.id === id));
@@ -2267,7 +2351,10 @@
                     coins -= fusionCost;
                     userPets = userPets.filter(p => !petsSelectedForFusion.includes(p.id));
 
-                    let fusionLuckFactor = 1.0 + (numFused > 5 ? (numFused - 5) * 0.1 : 0);
+                    let fusionLuckFactor = isBetterFusesIUpgradePurchased ? 1.25 : 1.0;
+                    if (numFused > minPets) {
+                       fusionLuckFactor += (numFused - minPets) * 0.1;
+                    }
                     const obtainedPet = getRandomPetByWeight(fusionLuckFactor, true, false); 
 
                     if (!obtainedPet) {
@@ -2311,6 +2398,33 @@
                 shopSessionWinnings = []; 
             }
         }
+        
+        function generateDailyShopStructure() {
+            if (!foreverPackConfig || !foreverPackConfig.tiers) {
+                playerShopState.dailyShopStructure = [];
+                return;
+            }
+
+            const structure = [];
+            // First claim is always free
+            structure.push({ type: 'free', cost: 0, tierIndex: 0, isPaywall: false });
+
+            for (let i = 0; i < foreverPackConfig.tiers.length; i++) {
+                const tier = foreverPackConfig.tiers[i];
+                // Add the paywall for the current tier
+                structure.push({ type: 'paywall', cost: tier.paywallCost || 0, tierIndex: i, isPaywall: true });
+
+                // Add a random number of free claims for this tier
+                const maxFreeClaims = tier.freeClaimsAfterPaywall || 0;
+                if (maxFreeClaims > 0) {
+                    const randomClaimsCount = Math.floor(Math.random() * maxFreeClaims) + 1;
+                    for (let j = 0; j < randomClaimsCount; j++) {
+                        structure.push({ type: 'free', cost: 0, tierIndex: i, isPaywall: false });
+                    }
+                }
+            }
+            playerShopState.dailyShopStructure = structure;
+        }
 
         function checkAndResetShop() {
             const now = Date.now();
@@ -2324,7 +2438,13 @@
                 playerShopState.currentLuck = 1.0;
                 playerShopState.resetExtensionMinutes = 0;
                 playerShopState.shopQueue = []; 
+                generateDailyShopStructure(); // Generate the new structure for the day
                 debouncedSavePlayerProgress();
+            } else if (!playerShopState.dailyShopStructure || playerShopState.dailyShopStructure.length === 0) {
+                 // This handles the case for players loading the game for the first time after the update
+                 console.log("Generating daily shop structure for the first time this session.");
+                 generateDailyShopStructure();
+                 debouncedSavePlayerProgress();
             }
         }
 
@@ -2359,36 +2479,22 @@
         }
         
         function getShopClaimDetails(claimCount) {
-            if (!foreverPackConfig || !foreverPackConfig.tiers || foreverPackConfig.tiers.length === 0) return null;
-
-            if (claimCount === 0) { // First claim is always free
-                return { type: 'free', cost: 0, tierIndex: 0, isPaywall: false };
+            if (!playerShopState.dailyShopStructure || playerShopState.dailyShopStructure.length === 0) {
+                 if (!foreverPackConfig || !foreverPackConfig.tiers) return null; // No config, no details
+                 const lastTier = foreverPackConfig.tiers[foreverPackConfig.tiers.length - 1];
+                 const escalatingCost = (lastTier.paywallCost || 500) + claimCount * 250;
+                 return { type: 'paid', cost: escalatingCost, tierIndex: foreverPackConfig.tiers.length - 1, isPaywall: false };
             }
 
-            let claimsProcessed = 1; // Account for the first free claim
-            for (let i = 0; i < foreverPackConfig.tiers.length; i++) {
-                const tier = foreverPackConfig.tiers[i];
-                const freeClaimsInTier = tier.freeClaimsAfterPaywall || 0;
-                
-                // Check if current claim is this tier's paywall
-                if (claimCount === claimsProcessed) {
-                    return { type: 'paywall', cost: tier.paywallCost || 0, tierIndex: i, isPaywall: true };
-                }
-                
-                // Check if current claim is a free one within this tier
-                const tierStartClaimIndex = claimsProcessed + 1;
-                const tierEndClaimIndex = claimsProcessed + freeClaimsInTier;
-                if (claimCount >= tierStartClaimIndex && claimCount <= tierEndClaimIndex) {
-                    return { type: 'free', cost: 0, tierIndex: i, isPaywall: false };
-                }
-
-                claimsProcessed += (1 + freeClaimsInTier); // Add paywall and free claims to processed total
+            if (claimCount >= playerShopState.dailyShopStructure.length) {
+                // If we've run out of configured claims, escalate cost
+                const lastTier = foreverPackConfig.tiers[foreverPackConfig.tiers.length - 1];
+                const claimsAfterStructure = claimCount - playerShopState.dailyShopStructure.length;
+                const escalatingCost = (lastTier.paywallCost || 500) + claimsAfterStructure * 250;
+                return { type: 'paid', cost: escalatingCost, tierIndex: foreverPackConfig.tiers.length - 1, isPaywall: false };
             }
 
-            // If all configured tiers are exhausted, escalate cost using the last tier's settings
-            const lastTier = foreverPackConfig.tiers[foreverPackConfig.tiers.length - 1];
-            const escalatingCost = (lastTier.paywallCost || 500) + (claimCount - claimsProcessed) * 250;
-            return { type: 'paid', cost: escalatingCost, tierIndex: foreverPackConfig.tiers.length - 1, isPaywall: false };
+            return playerShopState.dailyShopStructure[claimCount];
         }
         
         function rollShopItem() {
@@ -2592,10 +2698,19 @@
                         const resetAllPacks = httpsCallable(functions, 'resetAllForeverPacks');
                         const result = await resetAllPacks();
                         const data = result.data;
-                        showMessage(data.message, 'success');
+
+                        if (data && data.success) {
+                            showMessage(data.message || 'Successfully reset packs for all users.', 'success');
+                        } else {
+                            showMessage(data.message || 'The reset function completed but may have encountered issues.', 'error', 0);
+                        }
                     } catch (error) {
                         console.error("Error calling resetAllForeverPacks function:", error);
-                        showMessage(`Error: ${error.message}`, 'error', 0);
+                        if (error.code === 'internal') {
+                            showMessage('Error: The server had an internal error. Check the "resetAllForeverPacks" Cloud Function logs in Firebase.', 'error', 0);
+                        } else {
+                            showMessage(`Error calling function: ${error.message}`, 'error', 0);
+                        }
                     } finally {
                         enableMainButtons();
                     }
@@ -2642,7 +2757,7 @@
                             <input type="number" value="${tier.paywallCost || 0}" class="paywall-cost-input w-full p-1 border rounded" data-tier-index="${tierIndex}">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium">Free Claims After Paywall</label>
+                            <label class="block text-sm font-medium">Max Free Claims After Paywall</label>
                             <input type="number" value="${tier.freeClaimsAfterPaywall || 0}" class="free-claims-input w-full p-1 border rounded" data-tier-index="${tierIndex}">
                         </div>
                         <div>
@@ -2650,6 +2765,7 @@
                             <input type="number" step="0.01" value="${tier.luckBonus}" class="luck-bonus-input w-full p-1 border rounded" data-tier-index="${tierIndex}">
                         </div>
                     </div>
+                    <p class="text-xs text-gray-600">After paying the paywall, a player will get a random number of free claims between 1 and the max number set above.</p>
                 `;
                 packTiersContainer.appendChild(tierDiv);
             });
@@ -2702,13 +2818,12 @@
             packItemsContainer.appendChild(newItemDiv);
             newItemDiv.querySelector('.delete-item-btn').onclick = (e) => e.target.parentElement.remove();
         }
-
-        async function saveForeverPackConfig() {
-            if (userId !== ADMIN_USER_ID) return showMessage("Not authorized.", 'error');
-
+        
+        function readPackConfigFromUI() {
             const newConfig = { tiers: [], items: [] };
-            const tierDivs = packTiersContainer.querySelectorAll('.p-4.border');
+            if (!packTiersContainer || !packItemsContainer) return newConfig;
 
+            const tierDivs = packTiersContainer.querySelectorAll('.p-4.border');
             tierDivs.forEach((tierDiv) => {
                 const tierData = {
                     paywallCost: parseInt(tierDiv.querySelector('.paywall-cost-input').value) || 0,
@@ -2717,7 +2832,7 @@
                 };
                 newConfig.tiers.push(tierData);
             });
-            
+
             const itemDivs = packItemsContainer.querySelectorAll('.flex.items-center');
             itemDivs.forEach(itemDiv => {
                 const itemName = itemDiv.querySelector('.item-name-select').value;
@@ -2725,14 +2840,16 @@
                 const itemQuantity = parseInt(itemDiv.querySelector('.item-quantity-input').value) || 1;
                 const itemRarity = itemDiv.querySelector('.item-rarity-select').value;
                 if (itemName && itemChance > 0) {
-                    newConfig.items.push({ 
-                        name: itemName, 
-                        chance: itemChance, 
-                        quantity: itemQuantity, 
-                        rarity: itemRarity 
-                    });
+                    newConfig.items.push({ name: itemName, chance: itemChance, quantity: itemQuantity, rarity: itemRarity });
                 }
             });
+            return newConfig;
+        }
+
+        async function saveForeverPackConfig() {
+            if (userId !== ADMIN_USER_ID) return showMessage("Not authorized.", 'error');
+
+            const newConfig = readPackConfigFromUI();
 
             try {
                 const foreverPackConfigRef = doc(db, `artifacts/${appId}/public/data/shopConfig`, 'foreverPack');
@@ -2747,13 +2864,14 @@
         }
 
         addTierButton.addEventListener('click', () => {
+             foreverPackConfig = readPackConfigFromUI(); // First, capture any edits
              const newTier = {
                 paywallCost: 3000,
                 freeClaimsAfterPaywall: 2,
                 luckBonus: 0.1,
             };
             foreverPackConfig.tiers.push(newTier);
-            populateForeverPackManager();
+            populateForeverPackManager(); // Then, re-render with the new tier
         });
 
         downloadPackConfigButton.addEventListener('click', () => {
@@ -2786,6 +2904,57 @@
             reader.readAsText(file);
             event.target.value = '';
         });
+
+        // --- Update Log Functions ---
+        function openUpdateLog() {
+            if (isAutoRolling) stopAutoRoll();
+            updateLogModal.classList.remove('hidden');
+            updateLogModal.querySelector('.modal-content').classList.add('animate-in');
+            disableMainButtons();
+            loadUpdateLogContent();
+        }
+
+        function closeUpdateLog() {
+            updateLogModal.querySelector('.modal-content').classList.remove('animate-in');
+            updateLogModal.classList.add('hidden');
+            enableMainButtons();
+        }
+
+        function parseMarkdownToHTML(markdown) {
+            const lines = markdown.split('\n');
+            let html = '';
+            for (const line of lines) {
+                if (line.startsWith('## ')) {
+                    html += `<h2 class="text-xl font-bold mt-4 mb-2 text-gray-700 border-b pb-1">${line.substring(3)}</h2>`;
+                } else if (line.startsWith('# ')) {
+                    html += `<h1 class="text-3xl font-bold mt-6 mb-3 text-gray-800">${line.substring(2)}</h1>`;
+                } else if (line.match(/^!\[.*\]\(.*\)$/)) { // Image check: ![alt](src)
+                    const alt = line.substring(line.indexOf('[') + 1, line.indexOf(']'));
+                    const src = line.substring(line.indexOf('(') + 1, line.indexOf(')'));
+                    html += `<img src="${src}" alt="${alt}" class="max-w-full rounded-lg my-4 mx-auto block shadow-md border">`;
+                } else if (line.trim() === '') {
+                    continue;
+                } else {
+                    html += `<p class="my-2 leading-relaxed">${line}</p>`;
+                }
+            }
+            return html;
+        }
+
+        async function loadUpdateLogContent() {
+            updateLogContent.innerHTML = '<p>Loading updates...</p>';
+            try {
+                const response = await fetch('https://raw.githubusercontent.com/KingJ23341/Pets-GO/refs/heads/main/updates.md');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const markdownText = await response.text();
+                updateLogContent.innerHTML = parseMarkdownToHTML(markdownText);
+            } catch (error) {
+                console.error("Failed to load update log:", error);
+                updateLogContent.innerHTML = '<p class="text-red-500 font-bold">Failed to load updates. Please try again later.</p>';
+            }
+        }
 
         // --- Event Listeners ---
         diceButton.addEventListener('click', handleDiceClick);
@@ -2827,6 +2996,8 @@
         buyMoreCoinsIIUpgradeButton.addEventListener('click', handleBuyMoreCoinsIIUpgrade);
         buyRollMoreItemsUpgradeButton.addEventListener('click', handleBuyRollMoreItemsUpgrade);
         buyFusePetsUpgradeButton.addEventListener('click', handleBuyFusePetsUpgrade); 
+        buyBetterFusesIUpgradeButton.addEventListener('click', handleBuyBetterFusesIUpgrade);
+        buyCheaperFusesIUpgradeButton.addEventListener('click', handleBuyCheaperFusesIUpgrade);
 
         closeAdminUpgradeTreeModal.addEventListener('click', closeAdminUpgradeTree);
 
@@ -2972,6 +3143,8 @@
         savePackConfigButton.addEventListener('click', saveForeverPackConfig);
         addShopItemButton.addEventListener('click', handleAddShopItem);
 
+        updateLogButton.addEventListener('click', openUpdateLog);
+        closeUpdateLogModal.addEventListener('click', closeUpdateLog);
 
         window.onload = () => { setupFirebase(); };
     </script>
@@ -2984,7 +3157,7 @@
         .coins-display { font-size: 1.2rem; font-weight: bold; color: #4a5568; background-color: rgba(255, 255, 255, 0.7); padding: 0.5rem 1rem; border-radius: 0.5rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .game-container { display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; flex-grow: 1; position: relative; }
         .upgrade-tree-container, .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 100; padding: 1rem; box-sizing: border-box;}
-        #confirmationModal, #nicknameInputModal, #adminUpgradeTreeModal, #recentRollsModal, #foreverPackManagerModal { z-index: 200; }
+        #confirmationModal, #nicknameInputModal, #adminUpgradeTreeModal, #recentRollsModal, #foreverPackManagerModal, #updateLogModal { z-index: 200; }
         .upgrade-tree-content, .modal-content { background-color: #e6f7ff; padding: 2rem; border-radius: 1rem; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2); max-width: 90%; width: 400px; text-align: center; position: relative; max-height: 90vh; overflow-y: auto; }
         .modal-content { background-color: #ffffff; width: 500px; }
         .action-buttons-container { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); display: flex; gap: 1rem; z-index: 10; justify-content: center; }
@@ -3023,8 +3196,8 @@
         .rolling-pet-display { position: absolute; top: 25%; left: 50%; transform: translate(-50%, -50%); width: 150px; height: 150px; display: flex; justify-content: center; align-items: center; overflow: hidden; background-color: rgba(255, 255, 255, 0.7); border-radius: 15px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); z-index: 10; border: 2px dashed #a0aec0; }
         .rolling-pet-display img { width: 100%; height: 100%; object-fit: contain; }
         @keyframes popInAnimation { 0% { opacity: 0; transform: translateY(50px) scale(0.8); } 80% { opacity: 1; transform: translateY(-10px) scale(1.05); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
-        .inventory-modal-content, .pet-reveal-modal-content, .pet-collection-modal-content, .leaderboard-modal-content, .nickname-input-modal-content, .admin-upgrade-tree-modal-content, .recent-rolls-modal-content, #shopModalContent, #foreverPackManagerModal .modal-content { background-color: #e6f7ff; padding: 2rem; border-radius: 1rem; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2); max-width: 90%; width: 800px; text-align: center; position: relative; max-height: 80vh; overflow-y: auto; opacity: 0; transform: translateY(50px) scale(0.8); transition: opacity 0.3s ease, transform 0.3s ease; }
-        .inventory-modal-content.animate-in, .pet-reveal-modal-content.animate-in, .pet-collection-modal-content.animate-in, .leaderboard-modal-content.animate-in, .nickname-input-modal-content.animate-in, .admin-upgrade-tree-modal-content.animate-in, .recent-rolls-modal-content.animate-in, #shopModalContent.animate-in, #foreverPackManagerModal .modal-content.animate-in { animation: popInAnimation 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards; }
+        .inventory-modal-content, .pet-reveal-modal-content, .pet-collection-modal-content, .leaderboard-modal-content, .nickname-input-modal-content, .admin-upgrade-tree-modal-content, .recent-rolls-modal-content, #shopModalContent, #foreverPackManagerModal .modal-content, .update-log-modal-content { background-color: #e6f7ff; padding: 2rem; border-radius: 1rem; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2); max-width: 90%; width: 800px; text-align: center; position: relative; max-height: 80vh; overflow-y: auto; opacity: 0; transform: translateY(50px) scale(0.8); transition: opacity 0.3s ease, transform 0.3s ease; }
+        .inventory-modal-content.animate-in, .pet-reveal-modal-content.animate-in, .pet-collection-modal-content.animate-in, .leaderboard-modal-content.animate-in, .nickname-input-modal-content.animate-in, .admin-upgrade-tree-modal-content.animate-in, .recent-rolls-modal-content.animate-in, #shopModalContent.animate-in, #foreverPackManagerModal .modal-content.animate-in, .update-log-modal-content.animate-in { animation: popInAnimation 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards; }
         .inventory-pets-grid, .pet-collection-grid, .inventory-items-grid, .item-collection-grid, .fuseable-pets-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; justify-content: center; }
         .manage-currency-modal-content { background-color: #f8f8f8; padding: 2rem; border-radius: 1rem; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2); max-width: 90%; width: 450px; text-align: center; position: relative; max-height: 80vh; overflow-y: auto; }
         .manage-currency-modal-content label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333; text-align: left; }
@@ -3033,10 +3206,11 @@
         #revealedPetsContainer { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 1.5rem; margin-bottom: 1rem; }
         .won-pet-card { background-color: #ffffff; border: 2px solid #a7f3d0; }
         #petRevealCoinsMessage { font-size: 1.25rem; font-weight: 600; color: #059669; }
-        #petCollectionButton, #recentRollsButton, #shopButton { color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: background-color 0.2s ease, transform 0.2s ease; }
+        #petCollectionButton, #recentRollsButton, #shopButton, #updateLogButton { color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: background-color 0.2s ease, transform 0.2s ease; }
         #petCollectionButton { background-color: #3b82f6; } #petCollectionButton:hover { background-color: #2563eb; transform: translateY(-2px); }
         #recentRollsButton { background-color: #6366f1; } #recentRollsButton:hover { background-color: #4f46e5; transform: translateY(-2px); }
         #shopButton { background-color: #f59e0b; } #shopButton:hover { background-color: #d97706; transform: translateY(-2px); }
+        #updateLogButton { background-color: #8b5cf6; } #updateLogButton:hover { background-color: #7c3aed; transform: translateY(-2px); }
         .pet-collection-card .group-hover\:opacity-100 { opacity: 0; } .pet-collection-card:hover .group-hover\:opacity-100 { opacity: 1; }
         .admin-panel-button-container { position: absolute; top: 8rem; left: 50%; transform: translateX(-50%); z-index: 15; }
         .selected-for-deletion { border: 4px solid #ef4444 !important; box-shadow: 0 0 15px rgba(239, 68, 68, 0.7) !important; transform: scale(1.03); }
@@ -3061,6 +3235,8 @@
         .inventory-tabs { display: flex; justify-content: center; margin-bottom: 1.5rem; }
         .inventory-tabs button { padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s ease-in-out; margin: 0 0.25rem; background-color: #e2e8f0; color: #4a5568; }
         .inventory-tabs button.bg-blue-700 { background-color: #2563eb; color: white; }
+        .update-log-modal-content { background-color: #f3f4f6; max-width: 700px; }
+        #updateLogContent { max-height: 60vh; overflow-y: auto; padding-right: 1rem; text-align: left; }
 
         /* SHOP STYLES */
         #shopModalContent { background-color: #fefce8; }
@@ -3077,7 +3253,8 @@
             <div class="user-id-display" id="userIdDisplay">User ID: Loading...</div>
             <button id="shopButton">Shop</button>
             <button id="petCollectionButton">Pet Collection</button>
-            <button id="recentRollsButton">Recent Rolls</button> 
+            <button id="recentRollsButton">Recent Rolls</button>
+            <button id="updateLogButton">Update Log</button>
         </div>
         <div class="coins-display" id="coinsDisplay">Coins: 0</div>
     </div>
@@ -3096,7 +3273,7 @@
 
         <div class="action-buttons-container">
             <button id="autoRollButton" class="action-button auto-roll-button hidden"> <span class="repeat-icon">🔁</span> <span class="auto-roll-text">Stop Auto</span> </button>
-            <button id="inventoryButton" class="action-button inventory-button hidden"> <svg class="backpack-icon" viewBox="0 0 24 24"><path d="M20 6h-3V4c0-1.1-.9-2-2-2H9c-1.1 0-2 .9-2 2v2H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zM9 4h6v2H9V4zm11 15H4V8h3v2h2V8h6v2h2V8h3v11z"/></svg> <span class="inventory-text">Inventory</span> </button>
+            <button id="inventoryButton" class="action-button inventory-button hidden"> <svg class="backpack-icon" viewBox="0 0 24 24"><path d="M20 6h-3V4c0-1.1-.9-2-2-2H9c-1.1 0-2 .9-2 2v2H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2zM9 4h6v2H9V4zm11 15H4V8h3v2h2V8h6v2h2V8h3v11z"/></svg> <span class="inventory-text">Inventory</span> </button>
             <button id="diceButton" class="dice-button action-button"> <div class="dice-cube"> <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span> </div> <span class="roll-text">Roll!</span> </button>
             <button id="upgradeButton" class="action-button upgrade-button hidden"> <span class="upgrade-count-badge" id="upgradeCountBadge">0</span> <span class="upgrade-arrow text-2xl">⬆️</span> <span class="upgrade-text">Upgrades</span> </button>
             <button id="leaderboardsButton" class="action-button hidden"> <span class="text-2xl">🏆</span> <span class="text-sm mt-1">Leaderboards</span> </button>
@@ -3128,7 +3305,7 @@
     </div>
     <div id="confirmationModal" class="modal hidden"><div class="modal-content text-center"><p id="confirmationMessage" class="text-lg mb-6"></p><button id="confirmYesButton" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">Yes</button><button id="confirmNoButton" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg">No</button></div></div>
     <div id="petsListModal" class="modal hidden"><div class="modal-content max-w-2xl w-full"><button class="modal-close-button" id="closePetsListModal">&times;</button><h2 class="text-2xl font-bold mb-4">Pets List Management</h2><div class="mb-6 p-4 border border-gray-200 rounded-lg"><h3 class="text-xl font-semibold mb-3">Add/Edit Pet</h3><input type="text" id="petNameInput" placeholder="Pet Name" class="mb-2"><select id="petRarityInput" class="w-full p-2 mb-2 border border-gray-300 rounded-md"><option value="Common">Common</option><option value="Uncommon">Uncommon</option><option value="Rare">Rare</option><option value="Epic">Epic</option><option value="Legendary">Legendary</option><option value="Mythic">Mythic</option><option value="EXCLUSIVE">EXCLUSIVE</option><option value="HUGE">HUGE</option></select><input type="number" id="petChanceInput" placeholder="Chance (e.g., 3 for 1 in 3)" step="0.01" min="0.01" class="mb-2"><input type="text" id="petImageURLInput" placeholder="Pet Image URL (optional)" class="mb-2"><input type="number" id="petMinCoinsInput" placeholder="Min Coins (default 0)" step="1" min="0" class="mb-2"><button id="submitPetButton" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg w-full">Add Pet</button></div><div class="mb-6 p-4 border border-gray-200 rounded-lg"><h3 class="text-xl font-semibold mb-3">Import/Export Pets</h3><button id="downloadPetsButton" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg mr-2">Download Pets</button><label for="uploadPetsInput" class="inline-block bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg cursor-pointer">Upload Pets</label><input type="file" id="uploadPetsInput" accept=".json" class="hidden"><p class="text-sm text-gray-600 mt-2">Uploads ignore duplicate pet names. Ensure rarity matches predefined values.</p></div><div class="pets-management-table"><h3 class="text-xl font-semibold mb-3">Current Pets</h3><table class="w-full text-left table-auto rounded-lg overflow-hidden"><thead class="bg-gray-200"><tr><th class="px-4 py-2">Name</th><th class="px-4 py-2">Rarity</th><th class="px-4 py-2">Chance</th> <th class="px-4 py-2">Min Coins</th><th class="px-4 py-2">Image</th><th class="px-4 py-2">Actions</th></tr></thead><tbody id="petsManagementTableBody"></tbody></table></div></div></div>
-    <div id="upgradeTreeContainer" class="modal hidden"><div class="upgrade-tree-content"><button class="modal-close-button" id="closeUpgradeTreeModal">&times;</button><h2 class="text-2xl font-bold text-gray-800 mb-4">Upgrade Tree</h2><p class="text-gray-600">Upgrades available: <span id="currentUpgradesAvailable" class="font-bold text-blue-600">0</span></p><div class="upgrade-item p-3 border border-gray-300 rounded-lg mb-3"><button id="buyUpgrade1Button" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded-lg w-full text-sm">Coins -> Free (Earn coins)</button></div><div id="rollStreakUpgradeSection" class="upgrade-item p-3 border border-gray-300 rounded-lg mb-3 hidden"><h3 class="text-lg font-semibold mb-1">Roll Streak</h3><p id="currentRollStreakDisplay" class="text-gray-700 text-xs"></p><button id="buyRollStreakUpgradeButton" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-3 rounded-lg mt-2 w-full text-sm">Buy Roll Streak (500 Coins)</button></div><div id="inventoryUpgradeSection" class="upgrade-item p-3 border border-gray-300 rounded-lg mb-3 hidden"><h3 class="text-lg font-semibold mb-1">Inventory</h3><p class="text-gray-600 text-xs">Unlock your pet collection!</p><button id="buyInventoryUpgradeButton" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-3 rounded-lg mt-2 w-full text-sm">Buy Inventory (700 Coins)</button></div><div id="autoRollUpgradeSection" class="upgrade-item p-3 border border-gray-300 rounded-lg mb-3 hidden"><h3 class="text-lg font-semibold mb-1">Auto Roll</h3><p class="text-gray-600 text-xs">Automatically roll for pets!</p><button id="buyAutoRollUpgradeButton" class="bg-teal-500 hover:bg-teal-700 text-white font-bold py-2 px-3 rounded-lg mt-2 w-full text-sm">Buy Auto Roll (1000 Coins)</button></div><div id="hidePopupUpgradeSection" class="upgrade-item p-3 border border-gray-300 rounded-lg mb-3 hidden"> <h3 class="text-lg font-semibold mb-1">Hide Pet Pop-up</h3><p class="text-gray-600 text-xs">No more pop-ups after rolling!</p><button id="buyHidePopupUpgradeButton" class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-3 rounded-lg mt-2 w-full text-sm">Buy Hide Pet Pop-up (1250 Coins)</button></div><div id="fasterRollsIUpgradeSection" class="upgrade-item p-3 border border-gray-300 rounded-lg mb-3 hidden"><h3 class="text-lg font-semibold mb-1">Faster Rolls I</h3><p class="text-gray-600 text-xs">Tired of the rolling animation taking FOREVER? Roll 5% faster.</p><button id="buyFasterRollsIUpgradeButton" class="bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-3 rounded-lg mt-2 w-full text-sm">Buy Faster Rolls I (2000 Coins)</button></div><div id="rollItemsUpgradeSection" class="upgrade-item p-3 border border-gray-300 rounded-lg mb-3 hidden"><h3 class="text-lg font-semibold mb-1">Roll Items</h3><p class="text-gray-600 text-xs">Allows you to roll items as well. Items such as Faster Rolls Potion, Lucky Potion V, etc.</p><button id="buyRollItemsUpgradeButton" class="bg-pink-500 hover:bg-pink-700 text-white font-bold py-2 px-3 rounded-lg mt-2 w-full text-sm">Buy Roll Items (2500 Coins)</button></div><div id="deletePetsUpgradeSection" class="upgrade-item p-3 border border-gray-300 rounded-lg mb-3 hidden"><h3 class="text-lg font-semibold mb-1">Delete Pets</h3><p class="text-gray-600 text-xs">Inventory too heavy? How cruel of you to delete pets.</p><button id="buyDeletePetsUpgradeButton" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-lg mt-2 w-full text-sm">Buy Delete Pets (2500 Coins)</button></div><div id="betterDiceIUpgradeSection" class="upgrade-item p-3 border border-gray-300 rounded-lg mb-3 hidden"> <h3 class="text-lg font-semibold mb-1">Better Dice I</h3><p class="text-gray-600 text-xs">All pets rolled with these dice are 1/5 or better.</p><button id="buyBetterDiceIUpgradeButton" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded-lg mt-2 w-full text-sm">Buy Better Dice I (5000 Coins)</button></div><div id="rollBetterItemsUpgradeSection" class="upgrade-item p-3 border border-gray-300 rounded-lg mb-3 hidden"> <h3 class="text-lg font-semibold mb-1">Roll Better Items</h3><p class="text-gray-600 text-xs">Allows you to roll better items. Items such as Faster Rolls II, Lucky Potion II, etc. You can still get Lucky Potion and Faster Rolls I, but it's less likely.</p><button id="buyRollBetterItemsUpgradeButton" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-3 rounded-lg mt-2 w-full text-sm">Buy Roll Better Items (7500 Coins)</button></div><div id="moreCoinsIUpgradeSection" class="upgrade-item p-3 border border-gray-300 rounded-lg mb-3 hidden"> <h3 class="text-lg font-semibold mb-1">More Coins I</h3><p class="text-gray-600 text-xs">Earn 10% more coins when rolling.</p><button id="buyMoreCoinsIUpgradeButton" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-3 rounded-lg mt-2 w-full text-sm">Buy More Coins I (8000 Coins)</button></div><div id="leaderboardsUpgradeSection" class="upgrade-item p-3 border border-gray-300 rounded-lg mb-3 hidden"> <h3 class="text-lg font-semibold mb-1">Leaderboards</h3><p class="text-gray-600 text-xs">Rank up on the leaderboards and choose your nickname!</p><button id="buyLeaderboardsUpgradeButton" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-3 rounded-lg mt-2 w-full text-sm">Buy Leaderboards (10000 Coins)</button></div><div id="betterDiceIIUpgradeSection" class="upgrade-item p-3 border border-gray-300 rounded-lg mb-3 hidden"> <h3 class="text-lg font-semibold mb-1">Better Dice II</h3><p class="text-gray-600 text-xs">All pets rolled with these dice are 1/8 or better.</p><button id="buyBetterDiceIIUpgradeButton" class="bg-pink-700 hover:bg-pink-800 text-white font-bold py-2 px-3 rounded-lg mt-2 w-full text-sm">Buy Better Dice II (11000 Coins)</button></div><div id="moreCoinsIIUpgradeSection" class="upgrade-item p-3 border border-gray-300 rounded-lg mb-3 hidden"> <h3 class="text-lg font-semibold mb-1">More Coins II</h3><p class="text-gray-600 text-xs">Earn 15% more coins when rolling. Stacks with previous upgrade. Giving a total of +25% coins when rolling.</p><button id="buyMoreCoinsIIUpgradeButton" class="bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-bold py-2 px-3 rounded-lg mt-2 w-full text-sm">Buy More Coins II (15000 Coins)</button></div><div id="rollMoreItemsUpgradeSection" class="upgrade-item p-3 border border-gray-300 rounded-lg mb-3 hidden"> <h3 class="text-lg font-semibold mb-1">Roll More Items</h3><p class="text-gray-600 text-xs">Roll items more frequently. Items are 10% more common.</p><button id="buyRollMoreItemsUpgradeButton" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-3 rounded-lg mt-2 w-full text-sm">Buy Roll More Items (14000 Coins)</button></div><div id="fusePetsUpgradeSection" class="upgrade-item p-3 border border-gray-300 rounded-lg mb-3 hidden"> <h3 class="text-lg font-semibold mb-1">Fuse Pets</h3><p class="text-gray-600 text-xs">Combine multiple pets into one rarer pet!</p><button id="buyFusePetsUpgradeButton" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-lg mt-2 w-full text-sm">Buy Fuse Pets (15000 Coins)</button></div></div></div>
+    <div id="upgradeTreeContainer" class="modal hidden"><div class="upgrade-tree-content"><button class="modal-close-button" id="closeUpgradeTreeModal">&times;</button><h2 class="text-2xl font-bold text-gray-800 mb-4">Upgrade Tree</h2><p class="text-gray-600">Upgrades available: <span id="currentUpgradesAvailable" class="font-bold text-blue-600">0</span></p><div class="upgrade-item p-3 border border-gray-300 rounded-lg mb-3"><button id="buyUpgrade1Button" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded-lg w-full text-sm">Coins -> Free (Earn coins)</button></div><div id="rollStreakUpgradeSection" class="upgrade-item p-3 border border-gray-300 rounded-lg mb-3 hidden"><h3 class="text-lg font-semibold mb-1">Roll Streak</h3><p id="currentRollStreakDisplay" class="text-gray-700 text-xs"></p><button id="buyRollStreakUpgradeButton" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-3 rounded-lg mt-2 w-full text-sm">Buy Roll Streak (500 Coins)</button></div><div id="inventoryUpgradeSection" class="upgrade-item p-3 border border-gray-300 rounded-lg mb-3 hidden"><h3 class="text-lg font-semibold mb-1">Inventory</h3><p class="text-gray-600 text-xs">Unlock your pet collection!</p><button id="buyInventoryUpgradeButton" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-3 rounded-lg mt-2 w-full text-sm">Buy Inventory (700 Coins)</button></div><div id="autoRollUpgradeSection" class="upgrade-item p-3 border border-gray-300 rounded-lg mb-3 hidden"><h3 class="text-lg font-semibold mb-1">Auto Roll</h3><p class="text-gray-600 text-xs">Automatically roll for pets!</p><button id="buyAutoRollUpgradeButton" class="bg-teal-500 hover:bg-teal-700 text-white font-bold py-2 px-3 rounded-lg mt-2 w-full text-sm">Buy Auto Roll (1000 Coins)</button></div><div id="hidePopupUpgradeSection" class="upgrade-item p-3 border border-gray-300 rounded-lg mb-3 hidden"> <h3 class="text-lg font-semibold mb-1">Hide Pet Pop-up</h3><p class="text-gray-600 text-xs">No more pop-ups after rolling!</p><button id="buyHidePopupUpgradeButton" class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-3 rounded-lg mt-2 w-full text-sm">Buy Hide Pet Pop-up (1250 Coins)</button></div><div id="fasterRollsIUpgradeSection" class="upgrade-item p-3 border border-gray-300 rounded-lg mb-3 hidden"><h3 class="text-lg font-semibold mb-1">Faster Rolls I</h3><p class="text-gray-600 text-xs">Tired of the rolling animation taking FOREVER? Roll 5% faster.</p><button id="buyFasterRollsIUpgradeButton" class="bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-3 rounded-lg mt-2 w-full text-sm">Buy Faster Rolls I (2000 Coins)</button></div><div id="rollItemsUpgradeSection" class="upgrade-item p-3 border border-gray-300 rounded-lg mb-3 hidden"><h3 class="text-lg font-semibold mb-1">Roll Items</h3><p class="text-gray-600 text-xs">Allows you to roll items as well. Items such as Faster Rolls Potion, Lucky Potion V, etc.</p><button id="buyRollItemsUpgradeButton" class="bg-pink-500 hover:bg-pink-700 text-white font-bold py-2 px-3 rounded-lg mt-2 w-full text-sm">Buy Roll Items (2500 Coins)</button></div><div id="deletePetsUpgradeSection" class="upgrade-item p-3 border border-gray-300 rounded-lg mb-3 hidden"><h3 class="text-lg font-semibold mb-1">Delete Pets</h3><p class="text-gray-600 text-xs">Inventory too heavy? How cruel of you to delete pets.</p><button id="buyDeletePetsUpgradeButton" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-lg mt-2 w-full text-sm">Buy Delete Pets (2500 Coins)</button></div><div id="betterDiceIUpgradeSection" class="upgrade-item p-3 border border-gray-300 rounded-lg mb-3 hidden"> <h3 class="text-lg font-semibold mb-1">Better Dice I</h3><p class="text-gray-600 text-xs">All pets rolled with these dice are 1/5 or better.</p><button id="buyBetterDiceIUpgradeButton" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded-lg mt-2 w-full text-sm">Buy Better Dice I (5000 Coins)</button></div><div id="rollBetterItemsUpgradeSection" class="upgrade-item p-3 border border-gray-300 rounded-lg mb-3 hidden"> <h3 class="text-lg font-semibold mb-1">Roll Better Items</h3><p class="text-gray-600 text-xs">Allows you to roll better items. Items such as Faster Rolls II, Lucky Potion II, etc. You can still get Lucky Potion and Faster Rolls I, but it's less likely.</p><button id="buyRollBetterItemsUpgradeButton" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-3 rounded-lg mt-2 w-full text-sm">Buy Roll Better Items (7500 Coins)</button></div><div id="moreCoinsIUpgradeSection" class="upgrade-item p-3 border border-gray-300 rounded-lg mb-3 hidden"> <h3 class="text-lg font-semibold mb-1">More Coins I</h3><p class="text-gray-600 text-xs">Earn 10% more coins when rolling.</p><button id="buyMoreCoinsIUpgradeButton" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-3 rounded-lg mt-2 w-full text-sm">Buy More Coins I (8000 Coins)</button></div><div id="leaderboardsUpgradeSection" class="upgrade-item p-3 border border-gray-300 rounded-lg mb-3 hidden"> <h3 class="text-lg font-semibold mb-1">Leaderboards</h3><p class="text-gray-600 text-xs">Rank up on the leaderboards and choose your nickname!</p><button id="buyLeaderboardsUpgradeButton" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-3 rounded-lg mt-2 w-full text-sm">Buy Leaderboards (10000 Coins)</button></div><div id="betterDiceIIUpgradeSection" class="upgrade-item p-3 border border-gray-300 rounded-lg mb-3 hidden"> <h3 class="text-lg font-semibold mb-1">Better Dice II</h3><p class="text-gray-600 text-xs">All pets rolled with these dice are 1/8 or better.</p><button id="buyBetterDiceIIUpgradeButton" class="bg-pink-700 hover:bg-pink-800 text-white font-bold py-2 px-3 rounded-lg mt-2 w-full text-sm">Buy Better Dice II (11000 Coins)</button></div><div id="moreCoinsIIUpgradeSection" class="upgrade-item p-3 border border-gray-300 rounded-lg mb-3 hidden"> <h3 class="text-lg font-semibold mb-1">More Coins II</h3><p class="text-gray-600 text-xs">Earn 15% more coins when rolling. Stacks with previous upgrade. Giving a total of +25% coins when rolling.</p><button id="buyMoreCoinsIIUpgradeButton" class="bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-bold py-2 px-3 rounded-lg mt-2 w-full text-sm">Buy More Coins II (15000 Coins)</button></div><div id="rollMoreItemsUpgradeSection" class="upgrade-item p-3 border border-gray-300 rounded-lg mb-3 hidden"> <h3 class="text-lg font-semibold mb-1">Roll More Items</h3><p class="text-gray-600 text-xs">Roll items more frequently. Items are 10% more common.</p><button id="buyRollMoreItemsUpgradeButton" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-3 rounded-lg mt-2 w-full text-sm">Buy Roll More Items (14000 Coins)</button></div><div id="fusePetsUpgradeSection" class="upgrade-item p-3 border border-gray-300 rounded-lg mb-3 hidden"> <h3 class="text-lg font-semibold mb-1">Fuse Pets</h3><p class="text-gray-600 text-xs">Combine multiple pets into one rarer pet!</p><button id="buyFusePetsUpgradeButton" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-lg mt-2 w-full text-sm">Buy Fuse Pets (15000 Coins)</button></div><div id="betterFusesIUpgradeSection" class="upgrade-item p-3 border border-gray-300 rounded-lg mb-3 hidden"><h3 class="text-lg font-semibold mb-1">Better Fuses I</h3><p class="text-gray-600 text-xs">Increase the base luck of fuses from 1x to 1.25x.</p><button id="buyBetterFusesIUpgradeButton" class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-3 rounded-lg mt-2 w-full text-sm">Buy Better Fuses I (16000 Coins)</button></div><div id="cheaperFusesIUpgradeSection" class="upgrade-item p-3 border border-gray-300 rounded-lg mb-3 hidden"><h3 class="text-lg font-semibold mb-1">Cheaper Fuses I</h3><p class="text-gray-600 text-xs">Reduces the price to fuse pets by 10%.</p><button id="buyCheaperFusesIUpgradeButton" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-3 rounded-lg mt-2 w-full text-sm">Buy Cheaper Fuses I (18000 Coins)</button></div></div></div>
     <div id="adminUpgradeTreeModal" class="modal hidden"> <div class="modal-content admin-upgrade-tree-modal-content"> <button class="modal-close-button" id="closeAdminUpgradeTreeModal">&times;</button> <h2 class="text-2xl font-bold mb-4">Admin Upgrade Tree</h2> <p class="text-gray-600 mb-4">Click an upgrade to grant it to yourself for testing.</p> <div id="adminUpgradesList" class="grid grid-cols-1 gap-3"></div> </div> </div>
     <div id="inventoryModal" class="modal hidden"> <div class="inventory-modal-content"> <button class="modal-close-button" id="closeInventoryModal">&times;</button> <h2 class="text-2xl font-bold text-gray-800 mb-4">Your Inventory</h2> <div class="inventory-tabs"> <button id="inventoryTabButton" class="bg-blue-700">Inventory</button> <button id="fuseMachineTabButton" class="hidden">Fuse Machine</button> </div> <div id="inventoryContent"> <div id="inventoryItemsContainer" class="inventory-items-grid"></div> <div id="inventoryPetsContainer" class="inventory-pets-grid"></div> <button id="confirmDeleteSelectedPetsButton" class="hidden bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg mt-6 mx-auto block">Delete Selected Pets</button> </div> <div id="fuseMachineContent" class="hidden"> <p class="text-gray-600 mb-4">Select at least 5 pets to fuse them into a new, potentially rarer pet!</p> <p id="fuseSelectedCountDisplay" class="text-lg font-semibold text-blue-600 mb-4">Selected: 0 pets (Luck: 1.0x)</p> <div id="fuseablePetsContainer" class="fuseable-pets-grid"></div> <button id="fusePetsButton" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg mt-6 mx-auto block disabled:opacity-50 disabled:cursor-not-allowed">Fuse Pets!</button> </div> </div> </div>
     <div id="petCollectionModal" class="modal hidden"><div class="pet-collection-modal-content"><button class="modal-close-button" id="closePetCollectionModal">&times;</button><h2 class="text-2xl font-bold text-gray-800 mb-2">Available Pet Collection</h2><p class="text-sm text-gray-600 mb-4">Your current luck factor: <span id="collectionLuckFactorDisplay" class="font-bold text-blue-600">1.000x</span></p><div id="petCollectionContainer" class="pet-collection-grid"></div><div id="itemCollectionContainer" class="item-collection-grid"></div></div></div>
@@ -3183,6 +3360,17 @@
             
             <div class="mt-8 flex justify-end">
                 <button id="savePackConfigButton" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg">Save All Changes</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Update Log Modal -->
+    <div id="updateLogModal" class="modal hidden">
+        <div class="modal-content update-log-modal-content">
+            <button class="modal-close-button" id="closeUpdateLogModal">&times;</button>
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Update Log</h2>
+            <div id="updateLogContent">
+                <p>Loading updates...</p>
             </div>
         </div>
     </div>
