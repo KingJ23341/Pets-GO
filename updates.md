@@ -1,6 +1,15 @@
 # Pets GO Updates
 This is a list of all updates to Pets GO!
 
+## Update 5
+- Added: Added a new "Better Fuses I" upgrade, which increases the base luck value for fusing pets to 1.25x.
+<img width="1083" height="189" alt="image" src="https://github.com/user-attachments/assets/188d4978-c4b6-4b1a-ae2c-fb44f0d99233" />
+- Fuse better pets with your upgraded fuse machine with a base luck value of 1.25x for 16,000 Coins.
+
+- Added: Added a new upgrade. "Cheaper Fuses I", which decreases the amount each pet adds to the cost by 10%.
+<img width="1147" height="155" alt="image" src="https://github.com/user-attachments/assets/cd4c6e4d-5850-4696-b5fc-b7ee6132c898" />
+- For 18,000 Coins, enjoy cheaper fusing.
+
 ## Update 4
 - Fixed: Fixed numerous more errors.
 
