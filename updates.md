@@ -1,6 +1,9 @@
 # Pets GO Updates
 This is a list of all updates to Pets GO!
 
+## Update 4
+- Fixed: Fixed numerous more errors.
+
 ## Update 3
 - Fixed: Fixed issues with updating the Forever Pack in the Admin Panel.
 
