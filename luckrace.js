@@ -35,11 +35,9 @@
 
     /**
      * Initializes the Luck Race module.
-     * This function must be called by the main game script once it's loaded.
      * @param {object} mainGameInterface - An object containing references to main game functions and variables.
      */
     function init(mainGameInterface) {
-        // Validate the interface from the main game
         const requiredFunctions = ['getDb', 'getUserId', 'getUserData', 'savePlayerProgress', 'showMessage', 'getGlobalConfig', 'getAssetDetails'];
         for (const func of requiredFunctions) {
             if (typeof mainGameInterface[func] !== 'function') {
@@ -49,7 +47,6 @@
         }
         mainGame = mainGameInterface;
 
-        // Populate DOM element references
         let allElementsFound = true;
         requiredElementIds.forEach(id => {
             elements[id] = document.getElementById(id);
@@ -86,7 +83,6 @@
         gameState.isProcessing = false;
         gameState.currentRoom = 1;
 
-        // Hide main game UI if necessary (handled by main script)
         elements.luckRaceModal.classList.remove('hidden');
         elements.luckRaceModal.querySelector('.modal-content').classList.add('animate-in');
 
@@ -98,7 +94,7 @@
      */
     function renderRoom() {
         const { luckRaceConfig } = mainGame.getGlobalConfig();
-        if (!luckRaceConfig || !luckRaceConfig.rooms || luckRaceConfig.rooms.length === 0) {
+        if (!luckRaceConfig || !luckRaceConfig.rooms || !luckRaceConfig.itemPools) {
             mainGame.showMessage("Luck Race is not configured. Please contact an admin.", 'error', 0);
             return end(null, true);
         }
@@ -106,7 +102,6 @@
         const roomIndex = gameState.currentRoom - 1;
         const roomConfig = luckRaceConfig.rooms[Math.min(roomIndex, luckRaceConfig.rooms.length - 1)];
         
-        // Pick prizes for the two doors
         gameState.prizes.risk = pickPrizeFromPool(luckRaceConfig.itemPools[roomConfig.riskItemPool]);
         gameState.prizes.leave = pickPrizeFromPool(luckRaceConfig.itemPools[roomConfig.leaveItemPool]);
 
@@ -115,23 +110,19 @@
             return end(null, true);
         }
 
-        // Update UI Text
         const loseChance = Math.min(50, gameState.currentRoom * 5);
         elements.luckRaceRoomTitle.textContent = `Room ${gameState.currentRoom} of ${MAX_ROOMS}`;
         elements.luckRaceChanceText.textContent = `${loseChance}% chance of losing your prize if you continue...`;
 
-        // Render Prize Cards
         elements.luckRaceCardLeft.innerHTML = createCardHTML('Risk it?', gameState.prizes.risk, 'For this prize');
         elements.luckRaceCardRight.innerHTML = createCardHTML('Leave now?', gameState.prizes.leave, 'For this prize');
 
-        // Reset processing state
         gameState.isProcessing = false;
         toggleCardInteractivity(true);
     }
 
     /**
      * Handles the player's choice to either risk it or leave.
-     * @param {'risk' | 'leave'} choice - The choice made by the player.
      */
     function handleChoice(choice) {
         if (gameState.isProcessing) return;
@@ -166,14 +157,11 @@
         const hasLost = Math.random() < loseChance;
 
         if (hasLost) {
-            // Player loses
             elements.luckRaceLostModal.classList.remove('hidden');
-            end(null, true); // End the game, force no save
+            end(null, true); 
         } else {
-            // Player proceeds
             gameState.currentRoom++;
             if (gameState.currentRoom > MAX_ROOMS) {
-                // Player completed all rooms, award the final "risk" prize
                 awardPrize(gameState.prizes.risk);
             } else {
                 renderRoom();
@@ -190,7 +178,6 @@
 
     /**
      * Awards the chosen prize to the player and ends the game.
-     * @param {object} prize - The prize object to award.
      */
     function awardPrize(prize) {
         if (!prize) return end(null, true);
@@ -205,8 +192,10 @@
             }
         } else if (prize.type === 'pet') {
             const petDetails = mainGame.getAssetDetails('pet', prize.name);
-            for (let i = 0; i < prize.quantity; i++) {
-                userData.userPets.push({ ...petDetails, id: crypto.randomUUID() });
+            if (petDetails) {
+                 for (let i = 0; i < prize.quantity; i++) {
+                    userData.userPets.push({ ...petDetails, id: crypto.randomUUID() });
+                }
             }
         }
         
@@ -216,8 +205,6 @@
     
     /**
      * Ends the minigame and resets its state.
-     * @param {object | null} finalPrize - The prize that was won, if any.
-     * @param {boolean} forceNoSave - If true, skips saving player progress.
      */
     function end(finalPrize, forceNoSave = false) {
         gameState.isActive = false;
@@ -226,7 +213,6 @@
             mainGame.savePlayerProgress();
         }
 
-        // Delay hiding the main modal to allow win/loss modals to show first
         setTimeout(() => {
             elements.luckRaceModal.classList.add('hidden');
             elements.luckRaceModal.querySelector('.modal-content').classList.remove('animate-in');
@@ -236,12 +222,16 @@
 
     // --- UI & HELPER FUNCTIONS ---
 
+    // THIS FUNCTION WAS MISSING
+    function normalizeRarity(rarityString) {
+        if (!rarityString) return '';
+        const upperCaseRarity = rarityString.toUpperCase();
+        if (upperCaseRarity === 'EXCLUSIVE' || upperCaseRarity === 'HUGE') return upperCaseRarity;
+        return rarityString.charAt(0).toUpperCase() + rarityString.slice(1).toLowerCase();
+    }
+
     /**
      * Creates the inner HTML for a prize card.
-     * @param {string} title - The title of the card (e.g., "Risk it?").
-     * @param {object} prize - The prize object.
-     * @param {string} subtitle - The subtitle for the card.
-     * @returns {string} The generated HTML string.
      */
     function createCardHTML(title, prize, subtitle) {
         const assetDetails = mainGame.getAssetDetails(prize.type, prize.name);
@@ -261,13 +251,11 @@
 
     /**
      * Picks a random prize from a given weighted pool.
-     * @param {Array<object>} pool - The array of prize objects with weights.
-     * @returns {object | null} The chosen prize object or null if pool is invalid.
      */
     function pickPrizeFromPool(pool) {
         if (!pool || pool.length === 0) return null;
         const totalWeight = pool.reduce((sum, item) => sum + item.weight, 0);
-        if (totalWeight <= 0) return pool[0]; // Fallback for unweighted pools
+        if (totalWeight <= 0) return pool[0];
 
         let random = Math.random() * totalWeight;
         for (const item of pool) {
@@ -276,12 +264,12 @@
             }
             random -= item.weight;
         }
-        return pool[pool.length - 1]; // Fallback
+        return pool[pool.length - 1];
     }
 
     function showConfirmation(text, callback) {
         elements.luckRaceConfirmationText.textContent = text;
-        elements.luckRaceModal.classList.add('hidden'); // Hide game to show confirmation
+        elements.luckRaceModal.classList.add('hidden');
         elements.luckRaceConfirmationModal.classList.remove('hidden');
 
         elements.luckRaceConfirmYes.onclick = () => {
@@ -310,13 +298,10 @@
     }
 
     function playTransitionEffect(chosenCard, callback) {
-        // Simple visual effect for choosing a door
         chosenCard.classList.add('animate-pulse', 'border-yellow-400');
         const confetti = document.createElement('div');
         confetti.className = 'confetti-burst';
         chosenCard.appendChild(confetti);
-
-        // A "Tada" sound would be played here, e.g., new Audio('path/to/tada.mp3').play();
 
         setTimeout(() => {
             chosenCard.classList.remove('animate-pulse', 'border-yellow-400');
@@ -335,9 +320,6 @@
         }
     }
 
-
-    // --- ATTACH TO GLOBAL WINDOW ---
-    // This exposes the public functions to the main game script.
     window.LuckRace = {
         init,
         start
