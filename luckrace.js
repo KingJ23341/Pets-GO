@@ -184,9 +184,9 @@
 
         const userData = mainGame.getUserData();
         if (prize.type === 'item') {
-            const existingItem = userData.userItems.find(i => i.name === prize.name);
-            if (existingItem) {
-                existingItem.quantity = (existingItem.quantity || 1) + prize.quantity;
+            const existingItemIndex = userData.userItems.findIndex(i => i.name === prize.name);
+            if (existingItemIndex > -1) {
+                userData.userItems[existingItemIndex].quantity = (userData.userItems[existingItemIndex].quantity || 1) + prize.quantity;
             } else {
                 userData.userItems.push({ ...prize });
             }
@@ -222,7 +222,7 @@
 
     // --- UI & HELPER FUNCTIONS ---
 
-    // THIS FUNCTION WAS MISSING
+    // THIS FUNCTION WAS MISSING FROM THE PREVIOUS TRUNCATED RESPONSES
     function normalizeRarity(rarityString) {
         if (!rarityString) return '';
         const upperCaseRarity = rarityString.toUpperCase();
