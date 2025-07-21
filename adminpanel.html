@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pets GO! Admin Panel</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the admin panel */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+        }
+        .admin-container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .section-title {
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 0.75rem;
+            margin-bottom: 1.5rem;
+            color: #374151;
+        }
+        .card {
+            background-color: #f9fafb;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+        }
+        .input-field {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #2563eb; /* Blue focus ring */
+        }
+        .action-button {
+            background-color: #2563eb; /* Blue */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.2s, transform 0.1s;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .action-button:hover {
+            background-color: #1d4ed8;
+            transform: translateY(-1px);
+        }
+        .action-button:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center py-10">
+    <div class="admin-container">
+        <h1 class="text-4xl font-extrabold text-center text-gray-900 mb-8">
+            <span class="text-blue-600">Pets</span> <span class="text-green-500">GO!</span> Admin Panel
+        </h1>
+
+        <!-- User Management Section -->
+        <section class="mb-8">
+            <h2 class="text-2xl font-semibold section-title">User Management</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="card">
+                    <h3 class="text-xl font-medium text-gray-800 mb-4">View User Data</h3>
+                    <div class="mb-4">
+                        <label for="userIdInput" class="block text-gray-700 text-sm font-bold mb-2">User ID:</label>
+                        <input type="text" id="userIdInput" class="input-field" placeholder="Enter User ID">
+                    </div>
+                    <button class="action-button w-full">View Data</button>
+                    <div id="userDataDisplay" class="mt-4 p-3 bg-gray-50 rounded-md text-gray-700 text-sm overflow-auto max-h-40">
+                        <!-- User data will be displayed here -->
+                        No user data loaded.
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="text-xl font-medium text-gray-800 mb-4">Update User Data</h3>
+                    <div class="mb-4">
+                        <label for="updateUserIdInput" class="block text-gray-700 text-sm font-bold mb-2">User ID:</label>
+                        <input type="text" id="updateUserIdInput" class="input-field mb-3" placeholder="Enter User ID">
+                        <label for="updateDataInput" class="block text-gray-700 text-sm font-bold mb-2">Data (JSON):</label>
+                        <textarea id="updateDataInput" class="input-field h-24 resize-y" placeholder='{"petsCollected": 10}'></textarea>
+                    </div>
+                    <button class="action-button w-full">Update Data</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Game Settings Section -->
+        <section>
+            <h2 class="text-2xl font-semibold section-title">Game Settings</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="card">
+                    <h3 class="text-xl font-medium text-gray-800 mb-4">Adjust Drop Rates</h3>
+                    <div class="mb-4">
+                        <label for="commonRate" class="block text-gray-700 text-sm font-bold mb-2">Common Pet Rate (%):</label>
+                        <input type="number" id="commonRate" class="input-field mb-3" value="70">
+                        <label for="rareRate" class="block text-gray-700 text-sm font-bold mb-2">Rare Pet Rate (%):</label>
+                        <input type="number" id="rareRate" class="input-field" value="20">
+                    </div>
+                    <button class="action-button w-full">Save Drop Rates</button>
+                </div>
+                <div class="card">
+                    <h3 class="text-xl font-medium text-gray-800 mb-4">Global Messages</h3>
+                    <div class="mb-4">
+                        <label for="globalMessage" class="block text-gray-700 text-sm font-bold mb-2">Broadcast Message:</label>
+                        <textarea id="globalMessage" class="input-field h-24 resize-y" placeholder="New event starting soon!"></textarea>
+                    </div>
+                    <button class="action-button w-full">Send Message</button>
+                </div>
+            </div>
+        </section>
+    </div>
+</body>
+</html>
