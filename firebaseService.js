@@ -105,6 +105,10 @@ export async function savePlayerData(data) {
  */
 export async function initializeFirebaseAndAuth(onAuthChangeCallback) {
     console.log("initializeFirebaseAndAuth: Starting Firebase initialization and authentication process...");
+    console.log("initializeFirebaseAndAuth: Firebase Config:", firebaseConfig);
+    console.log("initializeFirebaseAndAuth: App ID:", appId);
+    console.log("initializeFirebaseAndAuth: Initial Auth Token:", initialAuthToken ? "Present" : "Not Present");
+
 
     if (!firebaseConfig || Object.keys(firebaseConfig).length === 0) {
         console.error("initializeFirebaseAndAuth: Firebase configuration is missing or empty.");
@@ -118,23 +122,33 @@ export async function initializeFirebaseAndAuth(onAuthChangeCallback) {
         app = initializeApp(firebaseConfig);
         auth = getAuth(app);
         db = getFirestore(app);
-        console.log("initializeFirebaseAndAuth: Firebase app, auth, and firestore instances created.");
+        console.log("initializeFirebaseAndAuth: Firebase app, auth, and firestore instances created successfully.");
 
         onAuthStateChanged(auth, async (user) => {
-            console.log("onAuthStateChanged: Callback fired. User object:", user ? user.uid : "null");
+            console.log("onAuthStateChanged: Callback fired. User object received:", user ? user.uid : "null");
             if (user) {
                 _currentUserId = user.uid;
-                console.log("onAuthStateChanged: User is signed in. User ID:", _currentUserId);
+                console.log("onAuthStateChanged: User is signed in. Setting _currentUserId to:", _currentUserId);
             } else {
                 _currentUserId = 'Not authenticated';
-                console.log("onAuthStateChanged: User is not authenticated.");
+                console.log("onAuthStateChanged: User is not authenticated. Setting _currentUserId to:", _currentUserId);
             }
             _isAuthReady = true; // Auth state has been determined
-            if (onAuthChangeCallback) onAuthChangeCallback(_currentUserId, _isAuthReady);
+            console.log("onAuthStateChanged: _isAuthReady set to true.");
 
-            // Load player data immediately after auth state is determined
-            if (user) { // Only load data if a user is actually signed in
+            if (onAuthChangeCallback) {
+                console.log("onAuthStateChanged: Invoking onAuthChangeCallback with _currentUserId:", _currentUserId, "and _isAuthReady:", _isAuthReady);
+                onAuthChangeCallback(_currentUserId, _isAuthReady);
+            } else {
+                console.log("onAuthStateChanged: No onAuthChangeCallback provided.");
+            }
+
+            // Load player data immediately after auth state is determined and user is signed in
+            if (user) {
+                console.log("onAuthStateChanged: User exists, attempting to load player data.");
                 await loadPlayerData();
+            } else {
+                console.log("onAuthStateChanged: No user, skipping player data load.");
             }
         });
 
