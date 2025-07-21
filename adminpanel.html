@@ -3,22 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pets GO! Admin Panel</title>
-    <!-- Tailwind CSS CDN -->
+    <title>Admin Panel Content</title>
+    <!-- Tailwind CSS CDN - Included for styling consistency in the modal content -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Custom styles for the admin panel */
+        /* Admin panel specific styles (copied from previous admin-panel-html) */
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6; /* Light gray background */
+            background-color: transparent; /* Ensure body of modal content is transparent */
         }
         .admin-container {
             max-width: 1000px;
-            margin: 2rem auto;
+            margin: 0 auto; /* Adjust margin for modal centering */
             padding: 2rem;
             background-color: #ffffff;
             border-radius: 1rem;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            position: relative; /* For close button positioning */
         }
         .section-title {
             border-bottom: 2px solid #e5e7eb;
@@ -61,12 +62,31 @@
             transform: translateY(-1px);
         }
         .action-button:active {
+            background-color: #2563eb; /* Blue */
             transform: translateY(0);
+        }
+        /* Close button for the modal */
+        .modal-close-button {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6b7280;
+            transition: color 0.2s;
+        }
+        .modal-close-button:hover {
+            color: #ef4444; /* Red on hover */
         }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center py-10">
+<body class="bg-transparent">
     <div class="admin-container">
+        <button id="close-admin-panel" class="modal-close-button">
+            &times; <!-- HTML entity for 'x' -->
+        </button>
         <h1 class="text-4xl font-extrabold text-center text-gray-900 mb-8">
             <span class="text-blue-600">Pets</span> <span class="text-green-500">GO!</span> Admin Panel
         </h1>
@@ -81,7 +101,7 @@
                         <label for="userIdInput" class="block text-gray-700 text-sm font-bold mb-2">User ID:</label>
                         <input type="text" id="userIdInput" class="input-field" placeholder="Enter User ID">
                     </div>
-                    <button class="action-button w-full">View Data</button>
+                    <button id="view-data-button" class="action-button w-full">View Data</button>
                     <div id="userDataDisplay" class="mt-4 p-3 bg-gray-50 rounded-md text-gray-700 text-sm overflow-auto max-h-40">
                         <!-- User data will be displayed here -->
                         No user data loaded.
@@ -95,7 +115,7 @@
                         <label for="updateDataInput" class="block text-gray-700 text-sm font-bold mb-2">Data (JSON):</label>
                         <textarea id="updateDataInput" class="input-field h-24 resize-y" placeholder='{"petsCollected": 10}'></textarea>
                     </div>
-                    <button class="action-button w-full">Update Data</button>
+                    <button id="update-data-button" class="action-button w-full">Update Data</button>
                 </div>
             </div>
         </section>
@@ -112,7 +132,7 @@
                         <label for="rareRate" class="block text-gray-700 text-sm font-bold mb-2">Rare Pet Rate (%):</label>
                         <input type="number" id="rareRate" class="input-field" value="20">
                     </div>
-                    <button class="action-button w-full">Save Drop Rates</button>
+                    <button id="save-drop-rates-button" class="action-button w-full">Save Drop Rates</button>
                 </div>
                 <div class="card">
                     <h3 class="text-xl font-medium text-gray-800 mb-4">Global Messages</h3>
@@ -120,10 +140,139 @@
                         <label for="globalMessage" class="block text-gray-700 text-sm font-bold mb-2">Broadcast Message:</label>
                         <textarea id="globalMessage" class="input-field h-24 resize-y" placeholder="New event starting soon!"></textarea>
                     </div>
-                    <button class="action-button w-full">Send Message</button>
+                    <button id="send-message-button" class="action-button w-full">Send Message</button>
                 </div>
             </div>
         </section>
     </div>
+
+    <!-- Admin Panel JavaScript -->
+    <script type="module">
+        // Declare variables to hold Firebase instances and helper functions
+        let _db;
+        let _appId;
+        let _getUserId;
+        let _savePlayerData;
+        let _getAuth;
+        let _doc;
+        let _getDoc;
+        let _setDoc;
+        let _ADMIN_USER_ID; // To receive the admin user ID from the parent
+
+        /**
+         * Function to set the Firebase dependencies from the parent script.
+         * This must be called by the parent script after injecting this HTML.
+         */
+        export function setAdminPanelDependencies(dependencies) {
+            _db = dependencies.db;
+            _appId = dependencies.appId;
+            _getUserId = dependencies.getUserId;
+            _savePlayerData = dependencies.savePlayerData;
+            _getAuth = dependencies.getAuth;
+            _doc = dependencies.doc;
+            _getDoc = dependencies.getDoc;
+            _setDoc = dependencies.setDoc;
+            _ADMIN_USER_ID = dependencies.ADMIN_USER_ID;
+            console.log("Admin Panel: Dependencies set successfully.");
+            // Initial check for Firebase instances after dependencies are set
+            if (!_db || !_appId || !_getUserId || !_savePlayerData || !_getAuth || !_doc || !_getDoc || !_setDoc || !_ADMIN_USER_ID) {
+                console.error("Admin Panel: Some Firebase instances or helper functions are still undefined after dependency injection.");
+            }
+        }
+
+        // Function to hide the admin panel modal (calls function defined in parent)
+        function hideAdminPanelModal() {
+            if (window.hideAdminPanel) { // Check if the parent function exists
+                window.hideAdminPanel();
+            } else {
+                console.error("Parent function 'hideAdminPanel' not found on window.");
+            }
+        }
+
+        // --- Event Listeners for Admin Panel Buttons ---
+
+        // Close Admin Panel Button
+        document.getElementById('close-admin-panel').addEventListener('click', hideAdminPanelModal);
+
+        // View User Data Button
+        document.getElementById('view-data-button').addEventListener('click', async () => {
+            const userId = document.getElementById('userIdInput').value.trim();
+            const userDataDisplay = document.getElementById('userDataDisplay');
+
+            if (!userId) {
+                userDataDisplay.textContent = "Please enter a User ID.";
+                return;
+            }
+            if (!_db) {
+                userDataDisplay.textContent = "Database not initialized.";
+                return;
+            }
+
+            userDataDisplay.textContent = "Loading...";
+            try {
+                const userDocRef = _doc(_db, `artifacts/${_appId}/users/${userId}/playerData`, "data");
+                const userDocSnap = await _getDoc(userDocRef);
+
+                if (userDocSnap.exists()) {
+                    userDataDisplay.textContent = JSON.stringify(userDocSnap.data(), null, 2);
+                } else {
+                    userDataDisplay.textContent = "User data not found for this ID.";
+                }
+            } catch (error) {
+                console.error("Error viewing user data:", error);
+                userDataDisplay.textContent = `Error: ${error.message}`;
+            }
+        });
+
+        // Update User Data Button
+        document.getElementById('update-data-button').addEventListener('click', async () => {
+            const userId = document.getElementById('updateUserIdInput').value.trim();
+            const updateDataInput = document.getElementById('updateDataInput').value.trim();
+            const userDataDisplay = document.getElementById('userDataDisplay'); // Re-using for feedback
+
+            if (!userId) {
+                userDataDisplay.textContent = "Please enter a User ID for update.";
+                return;
+            }
+            if (!updateDataInput) {
+                userDataDisplay.textContent = "Please enter data to update (JSON format).";
+                return;
+            }
+            if (!_db) {
+                userDataDisplay.textContent = "Database not initialized.";
+                return;
+            }
+
+            try {
+                const dataToUpdate = JSON.parse(updateDataInput);
+                const userDocRef = _doc(_db, `artifacts/${_appId}/users/${userId}/playerData`, "data");
+
+                // Ensure the current authenticated user is the admin before allowing update
+                // This is a client-side check, server-side security rules are essential!
+                const currentAdminId = _getAuth(window.app).currentUser?.uid; // Access auth instance from global app
+                if (currentAdminId !== _ADMIN_USER_ID) { // Compare against injected ADMIN_USER_ID
+                    userDataDisplay.textContent = "Permission denied: Only the designated admin can update data.";
+                    return;
+                }
+
+                await _setDoc(userDocRef, dataToUpdate, { merge: true });
+                userDataDisplay.textContent = `Data for ${userId} updated successfully!`;
+                document.getElementById('updateDataInput').value = ''; // Clear input
+            } catch (error) {
+                console.error("Error updating user data:", error);
+                userDataDisplay.textContent = `Error updating data: ${error.message}`;
+            }
+        });
+
+        // Save Drop Rates Button (Placeholder for future implementation)
+        document.getElementById('save-drop-rates-button').addEventListener('click', () => {
+            alert("Save Drop Rates functionality not yet implemented.");
+        });
+
+        // Send Message Button (Placeholder for future implementation)
+        document.getElementById('send-message-button').addEventListener('click', () => {
+            alert("Send Message functionality not yet implemented.");
+        });
+    </script>
 </body>
 </html>
